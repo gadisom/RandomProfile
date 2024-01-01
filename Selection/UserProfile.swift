@@ -13,13 +13,13 @@ struct RandomUserResponse: Decodable {
     let results: [RandomUser]
 }
 
-struct RandomUser: Decodable {
+struct RandomUser: Decodable, Hashable {
     let gender: String
     let email: String
     let name: Name
     let location: Location
 
-    struct Name: Decodable {
+    struct Name: Decodable, Hashable {
         let title: String
         let first: String
         let last: String
@@ -29,11 +29,7 @@ struct RandomUser: Decodable {
         }
     }
 
-    struct Location: Decodable {
+    struct Location: Decodable, Hashable {
         let country: String
     }
-    struct Email : Decodable {
-    
-    }
 }
-

@@ -6,8 +6,8 @@ import RxCocoa
 class ViewController: UIViewController, StoryboardView {
     var disposeBag = DisposeBag()
     typealias Reactor = ViewControllerReactor
-    typealias DataSource = UICollectionViewDiffableDataSource<Section, User>
-    typealias Snapshot = NSDiffableDataSourceSnapshot<Section, User>
+    typealias DataSource = UICollectionViewDiffableDataSource<Section, RandomUser>
+    typealias Snapshot = NSDiffableDataSourceSnapshot<Section, RandomUser>
     
     @IBOutlet weak var viewOptionButton: UIButton!
     @IBOutlet weak var genderSegmentedControl: UISegmentedControl!
@@ -26,9 +26,9 @@ class ViewController: UIViewController, StoryboardView {
         
         configureCollectionViewLayout()
         configureDataSource()
-        applyInitialSnapshot()
         if let reactor = self.reactor {
             bind(reactor: reactor)
+            reactor.action.onNext(.selectGender(.male)) // 초기 API 호출
         }
         viewOptionButton.addTarget(self, action: #selector(toggleViewOption), for: .touchUpInside)
     }
@@ -38,7 +38,8 @@ class ViewController: UIViewController, StoryboardView {
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ProfileCell", for: indexPath) as? ProfileCell else {
                 fatalError("Unable to dequeue ProfileCell")
             }
-            cell.configure(with: user, reactor: self.reactor!, columnLayout: self.reactor?.currentState.columnLayout ?? 1)
+            let columnLayout = self.reactor?.currentState.columnLayout ?? 1
+            cell.configure(with: user, reactor: self.reactor!, columnLayout: columnLayout)
             return cell
         }
     }
@@ -66,25 +67,30 @@ class ViewController: UIViewController, StoryboardView {
         reactor?.action.onNext(.toggleLayout)
     }
     
-    private func applyInitialSnapshot() {
+    private func applySnapshot(users: [RandomUser]) {
+        guard let dataSource = dataSource else {
+            print("DataSource is nil")
+            return
+        }
+        
         var snapshot = Snapshot()
         snapshot.appendSections([.main])
-        snapshot.appendItems([
-            User(name: "John Doe", country: "USA", email: "jodhn@example.com"),
-            User(name: "Jane Smith", country: "UK", email: "jane@example.co.uk")
-        ], toSection: .main)
-        dataSource.apply(snapshot, animatingDifferences: false)
+        snapshot.appendItems(users, toSection: .main)
+        dataSource.apply(snapshot, animatingDifferences: true)
     }
+    
     func bind(reactor: ViewControllerReactor) {
         genderSegmentedControl.rx.selectedSegmentIndex
             .map { index in
                 index == 0 ? .male : .female
             }
+            .distinctUntilChanged()
             .map(Reactor.Action.selectGender)
             .bind(to: reactor.action)
             .disposed(by: disposeBag)
         
         reactor.state.map { $0.selectedGender }
+            .distinctUntilChanged()
             .map { $0 == .male ? 0 : 1 }
             .bind(to: genderSegmentedControl.rx.selectedSegmentIndex)
             .disposed(by: disposeBag)
@@ -92,7 +98,11 @@ class ViewController: UIViewController, StoryboardView {
             .map { Reactor.Action.toggleLayout }
             .bind(to: reactor.action)
             .disposed(by: disposeBag)
-        
+        reactor.state.map { $0.users }
+            .subscribe(onNext: { [weak self] users in
+                self?.applySnapshot(users: users)
+            })
+            .disposed(by: disposeBag)
         reactor.state
             .map { $0.columnLayout }
             .distinctUntilChanged()
@@ -108,17 +118,3 @@ class ViewController: UIViewController, StoryboardView {
     }
 }
 
-struct User: Hashable {
-    let name: String
-    let country: String
-    let email: String
-    let identifier = UUID()
-    
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(identifier)
-    }
-    
-    static func == (lhs: User, rhs: User) -> Bool {
-        lhs.identifier == rhs.identifier
-    }
-}

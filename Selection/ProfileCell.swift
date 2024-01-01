@@ -130,9 +130,9 @@ class ProfileCell: UICollectionViewCell, StoryboardView {
         emailLabel.text = nil
     }
     
-    func configure(with user: User, reactor: ViewControllerReactor, columnLayout: Int) {
-        nameLabel.text = user.name
-        countryLabel.text = user.country
+    func configure(with user: RandomUser, reactor: ViewControllerReactor, columnLayout: Int) {
+        nameLabel.text = user.name.fullName
+        countryLabel.text = user.location.country
         emailLabel.text = user.email
         userProfileImageView.image = UIImage(systemName: "person.fill")
         
