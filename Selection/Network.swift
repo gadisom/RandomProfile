@@ -8,7 +8,7 @@ import RxCocoa
 import RxSwift 
 import Foundation
 import Moya
-
+//https://randomuser.me/api/?results=5
 enum RandomUserService {
     case getUsers(gender: ViewControllerReactor.Gender)
 }
@@ -19,7 +19,7 @@ extension RandomUserService: TargetType {
     var path: String {
         switch self {
         case .getUsers:
-            return "/api/?results=14"
+            return "/api"
         }
     }
     
@@ -34,7 +34,7 @@ extension RandomUserService: TargetType {
             switch self {
             case .getUsers(let gender):
                 return .requestParameters(
-                    parameters: ["gender": gender.stringValue, "inc": "gender,name,email,location","results":"14"],
+                    parameters: ["gender": gender.stringValue, "inc": "gender,name,email,location","results" : 14],
                     encoding: URLEncoding.queryString
                 )
             }
