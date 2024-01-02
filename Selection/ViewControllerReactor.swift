@@ -17,7 +17,7 @@ class ViewControllerReactor: Reactor {
         case selectGender(Gender)
         case toggleLayout
         case refreshData
-        
+        case moreLoadData(Gender)
     }
     
     // 상태 변화를 나타내는 열거형
@@ -28,7 +28,8 @@ class ViewControllerReactor: Reactor {
         case setWomenUsers([RandomWomen])
         case setError(Error)
         case resetDataLoadedFlags
-        
+        case appendMenUsers([RandomMen])
+        case appendWomenUsers([RandomWomen])
     }
     
     // 뷰의 상태를 나타내는 구조체
@@ -53,6 +54,27 @@ class ViewControllerReactor: Reactor {
     
     func mutate(action: Action) -> Observable<Mutation> {
         switch action {
+        case .moreLoadData(let gender):
+            // 추가 데이터 로드
+            let service: RandomUserService = (gender == .male) ? .getMenUsers : .getWomenUsers
+            return self.provider.rx.request(service)
+                .filterSuccessfulStatusCodes()
+                .flatMap { response -> Single<Mutation> in
+                    do {
+                        if gender == .male {
+                            let menResponse = try response.map(RandomMenResponse.self)
+                            let newUsers = self.currentState.menUsers + menResponse.results
+                            return Single.just(Mutation.setMenUsers(newUsers))
+                        } else {
+                            let womenResponse = try response.map(RandomWomenResponse.self)
+                            let newUsers = self.currentState.womenUsers + womenResponse.results
+                            return Single.just(Mutation.setWomenUsers(newUsers))
+                        }
+                    } catch {
+                        return Single.just(Mutation.setError(error))
+                    }
+                }
+                .asObservable()
         case let .selectGender(gender):
             // 데이터가 이미 로드된 경우 요청을 보내지 않음
             if (gender == .male && currentState.isMenDataLoaded) ||
@@ -129,6 +151,10 @@ class ViewControllerReactor: Reactor {
         case .resetDataLoadedFlags:
             newState.isMenDataLoaded = false
             newState.isWomenDataLoaded = false
+        case let .appendMenUsers(newUsers):
+            newState.menUsers.append(contentsOf: newUsers)
+        case let .appendWomenUsers(newUsers):
+            newState.womenUsers.append(contentsOf: newUsers)
         }
         return newState
     }

@@ -41,19 +41,33 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate {
         configureDataSource(collectionView: collectionView2)
         setupRefreshControl(for: collectionView, refreshControl: refreshControl1)
         setupRefreshControl(for: collectionView2, refreshControl: refreshControl2)
+        setupLoadMoreDataTrigger(for: collectionView, gender: .male)
+        setupLoadMoreDataTrigger(for: collectionView2, gender: .female)
+
         if let reactor = self.reactor {
             bind(reactor: reactor)
             reactor.action.onNext(.selectGender(.male)) // 초기 API 호출
         }
         viewOptionButton.addTarget(self, action: #selector(toggleViewOption), for: .touchUpInside)
     }
+    private func setupLoadMoreDataTrigger(for collectionView: UICollectionView, gender: ViewControllerReactor.Gender) {
+          collectionView.rx.contentOffset
+              .map { [unowned collectionView] offset in
+                  return offset.y + collectionView.frame.size.height > collectionView.contentSize.height
+              }
+              .distinctUntilChanged()
+              .filter { $0 }
+              .map { _ in Reactor.Action.moreLoadData(gender) }
+              .bind(to: reactor!.action)
+              .disposed(by: disposeBag)
+      }
     private func setupRefreshControl(for collectionView: UICollectionView, refreshControl: UIRefreshControl) {
             collectionView.refreshControl = refreshControl
             refreshControl.rx.controlEvent(.valueChanged)
                 .map { Reactor.Action.refreshData }
                 .bind(to: reactor!.action)
                 .disposed(by: disposeBag)
-        }
+    }
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         let pageIndex = Int(scrollView.contentOffset.x / scrollView.frame.size.width)
         genderSegmentedControl.selectedSegmentIndex = pageIndex
@@ -138,7 +152,6 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate {
     }
     
     func bind(reactor: ViewControllerReactor) {
-        
         // 스크롤 뷰의 페이지 변경에 따른 세그먼트 컨트롤 값 변경
         scrollView.rx.didEndDecelerating
             .map { _ in
