@@ -34,7 +34,7 @@ extension RandomUserService: TargetType {
             switch self {
             case .getUsers(let gender):
                 return .requestParameters(
-                    parameters: ["gender": gender.stringValue, "inc": "gender,name,email,location","results" : 14],
+                    parameters: ["gender": gender.stringValue, "inc": "gender,name,email,location,picture","results" : 14],
                     encoding: URLEncoding.queryString
                 )
             }

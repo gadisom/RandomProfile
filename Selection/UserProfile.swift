@@ -18,7 +18,7 @@ struct RandomUser: Decodable, Hashable {
     let email: String
     let name: Name
     let location: Location
-
+    let picture : Picture
     struct Name: Decodable, Hashable {
         let title: String
         let first: String
@@ -31,5 +31,10 @@ struct RandomUser: Decodable, Hashable {
 
     struct Location: Decodable, Hashable {
         let country: String
+    }
+    struct Picture: Decodable, Hashable {
+        let thumbnail: String
+        let medium : String
+        let large : String 
     }
 }

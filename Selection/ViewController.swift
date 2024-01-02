@@ -3,12 +3,14 @@ import RxSwift
 import ReactorKit
 import RxCocoa
 
-class ViewController: UIViewController, StoryboardView {
+class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate {
     var disposeBag = DisposeBag()
     typealias Reactor = ViewControllerReactor
     typealias DataSource = UICollectionViewDiffableDataSource<Section, RandomUser>
     typealias Snapshot = NSDiffableDataSourceSnapshot<Section, RandomUser>
     
+    
+    @IBOutlet weak var scrollView: UIScrollView!
     @IBOutlet weak var viewOptionButton: UIButton!
     @IBOutlet weak var genderSegmentedControl: UISegmentedControl!
     @IBOutlet weak var collectionView: UICollectionView!
@@ -23,7 +25,7 @@ class ViewController: UIViewController, StoryboardView {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.reactor = ViewControllerReactor()
-        
+        scrollView.delegate = self
         configureCollectionViewLayout()
         configureDataSource()
         if let reactor = self.reactor {
@@ -32,6 +34,12 @@ class ViewController: UIViewController, StoryboardView {
         }
         viewOptionButton.addTarget(self, action: #selector(toggleViewOption), for: .touchUpInside)
     }
+    
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+            let pageIndex = Int(scrollView.contentOffset.x / scrollView.frame.size.width)
+            genderSegmentedControl.selectedSegmentIndex = pageIndex
+            reactor?.action.onNext(.selectGender(pageIndex == 0 ? .male : .female))
+        }
     private func configureDataSource() {
         dataSource = DataSource(collectionView: collectionView) { [weak self] (collectionView, indexPath, user) -> UICollectionViewCell? in
             guard let self = self else { return nil }
@@ -50,7 +58,7 @@ class ViewController: UIViewController, StoryboardView {
     }
     
     private func createLayout(columns: Int) -> UICollectionViewLayout {
-        let itemWidthFraction: CGFloat = columns == 1 ? 1.0 : 0.5
+        let itemWidthFraction: CGFloat = columns == 1 ? 1 : 0.5
         let itemHightFraction: CGFloat = columns == 1 ? 0.2 : 0.4
         let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(itemWidthFraction), heightDimension: .fractionalHeight(1))
         let item = NSCollectionLayoutItem(layoutSize: itemSize)

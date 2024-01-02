@@ -110,7 +110,18 @@ class ProfileCell: UICollectionViewCell, StoryboardView {
             ]
         NSLayoutConstraint.activate(oneColumnConstraints)
     }
-    
+    func loadImage(url: URL) {
+        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+            guard let data = data, let image = UIImage(data: data) else {
+                return
+            }
+
+            DispatchQueue.main.async {
+                self?.userProfileImageView.image = image
+            }
+        }.resume()
+    }
+
     private func updateLayout(columnLayout: Int) {
         if columnLayout == 1 {
             NSLayoutConstraint.deactivate(twoColumnConstraints)
@@ -134,8 +145,12 @@ class ProfileCell: UICollectionViewCell, StoryboardView {
         nameLabel.text = user.name.fullName
         countryLabel.text = user.location.country
         emailLabel.text = user.email
-        userProfileImageView.image = UIImage(systemName: "person.fill")
-        
+        let imageUrlString = columnLayout == 1 ? user.picture.thumbnail : user.picture.medium
+            if let imageUrl = URL(string: imageUrlString) {
+                loadImage(url: imageUrl)
+            } else {
+                userProfileImageView.image = UIImage(systemName: "person.fill")
+            }
         self.reactor = reactor
         updateLayout(columnLayout: columnLayout)
         bind(reactor: reactor)
