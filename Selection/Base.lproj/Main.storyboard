@@ -121,11 +121,11 @@
                         </constraints>
                     </view>
                     <connections>
-                        <outlet property="collectionView" destination="VS4-ZG-JQ2" id="jjh-1B-gGo"/>
-                        <outlet property="collectionView2" destination="cx8-Sh-nvu" id="FWe-yj-Bgz"/>
                         <outlet property="genderSegmentedControl" destination="X1t-P1-y9K" id="qIf-x9-qD3"/>
+                        <outlet property="menCollectionView" destination="VS4-ZG-JQ2" id="yVr-d6-9rC"/>
                         <outlet property="scrollView" destination="kTs-Hf-ev6" id="SMS-N1-gn4"/>
                         <outlet property="viewOptionButton" destination="RGT-Ae-Oqe" id="UyL-X4-BaS"/>
+                        <outlet property="womenCollectionView2" destination="cx8-Sh-nvu" id="GP4-n6-BU6"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>

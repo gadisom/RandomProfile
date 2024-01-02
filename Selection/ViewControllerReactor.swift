@@ -9,6 +9,7 @@ import ReactorKit
 import RxCocoa
 import RxSwift
 import RxMoya
+import Foundation
 
 class ViewControllerReactor: Reactor {
     
@@ -18,6 +19,8 @@ class ViewControllerReactor: Reactor {
         case toggleLayout
         case refreshData
         case moreLoadData(Gender)
+        case deleteUser(Gender, IndexPath)
+
     }
     
     // 상태 변화를 나타내는 열거형
@@ -30,6 +33,7 @@ class ViewControllerReactor: Reactor {
         case resetDataLoadedFlags
         case appendMenUsers([RandomMen])
         case appendWomenUsers([RandomWomen])
+        case deleteUser(Gender,IndexPath)
     }
     
     // 뷰의 상태를 나타내는 구조체
@@ -126,6 +130,8 @@ class ViewControllerReactor: Reactor {
                 .asObservable()
                 .startWith(Mutation.setSelectedGender(gender))
                 .concat(Observable.just(Mutation.resetDataLoadedFlags))
+        case let .deleteUser(gender, indexPath):
+                return Observable.just(Mutation.deleteUser(gender, indexPath))
             
         }
     }
@@ -155,6 +161,12 @@ class ViewControllerReactor: Reactor {
             newState.menUsers.append(contentsOf: newUsers)
         case let .appendWomenUsers(newUsers):
             newState.womenUsers.append(contentsOf: newUsers)
+        case let .deleteUser(gender, indexPath):
+              if gender == .male {
+                  newState.menUsers.remove(at: indexPath.row)
+              } else {
+                  newState.womenUsers.remove(at: indexPath.row)
+              }
         }
         return newState
     }
