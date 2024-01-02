@@ -132,6 +132,38 @@
             </objects>
             <point key="canvasLocation" x="139.69465648854961" y="-2.1126760563380285"/>
         </scene>
+        <!--Profile Image View Controller-->
+        <scene sceneID="IX9-Xh-eYs">
+            <objects>
+                <viewController storyboardIdentifier="ProfileImageViewController" id="cuv-Vj-eMt" customClass="ProfileImageViewController" customModule="Selection" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="y9Y-y3-6gw">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="ham-7l-ZME">
+                                <rect key="frame" x="0.0" y="242" width="393" height="393"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" secondItem="ham-7l-ZME" secondAttribute="height" id="KrP-1I-u5e"/>
+                                </constraints>
+                            </imageView>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="SE5-zv-y3B"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="ham-7l-ZME" firstAttribute="centerY" secondItem="SE5-zv-y3B" secondAttribute="centerY" id="1k4-YE-rLZ"/>
+                            <constraint firstItem="ham-7l-ZME" firstAttribute="leading" secondItem="SE5-zv-y3B" secondAttribute="leading" id="2lN-ZD-9Vh"/>
+                            <constraint firstItem="ham-7l-ZME" firstAttribute="width" secondItem="y9Y-y3-6gw" secondAttribute="width" id="8wX-bv-EUk"/>
+                            <constraint firstItem="ham-7l-ZME" firstAttribute="centerX" secondItem="SE5-zv-y3B" secondAttribute="centerX" id="gY8-ft-7w2"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="profileImageView" destination="ham-7l-ZME" id="pmn-z0-15h"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="yV1-Dk-0Nm" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="915" y="-2"/>
+        </scene>
     </scenes>
     <resources>
         <systemColor name="systemBackgroundColor">

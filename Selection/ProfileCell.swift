@@ -91,7 +91,7 @@ class ProfileCell: UICollectionViewCell, StoryboardView {
         
         // 2열 레이아웃 제약 조건
         twoColumnConstraints = [
-                userProfileImageView.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.45),
+                userProfileImageView.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 1),
                 userProfileImageView.topAnchor.constraint(equalTo: topAnchor),
                 userProfileImageView.centerXAnchor.constraint(equalTo: centerXAnchor),
 
@@ -140,15 +140,6 @@ class ProfileCell: UICollectionViewCell, StoryboardView {
         countryLabel.text = nil
         emailLabel.text = nil
     }
-    
-//    func configureWithMen(user: RandomMen, reactor: ViewControllerReactor, columnLayout: Int) {
-//        configureCommon(user: user, reactor: reactor, columnLayout: columnLayout)
-//    }
-//
-//    func configureWithWomen(user: RandomWomen, reactor: ViewControllerReactor, columnLayout: Int) {
-//        configureCommon(user: user, reactor: reactor, columnLayout: columnLayout)
-//    }
-
    
     func configure(with user: Any, reactor: ViewControllerReactor, columnLayout: Int) {
         var fullName = ""
@@ -161,6 +152,7 @@ class ProfileCell: UICollectionViewCell, StoryboardView {
             country = menUser.location.country
             email = menUser.email
             imageUrlString = columnLayout == 1 ? menUser.picture.thumbnail : menUser.picture.medium
+            print("imgaeStr:\(imageUrlString)")
         } else if let womenUser = user as? RandomWomen {
             fullName = womenUser.name.fullName
             country = womenUser.location.country

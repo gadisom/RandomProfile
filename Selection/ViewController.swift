@@ -22,6 +22,10 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate {
     private var dataSource2: DataSource2!
     private var isTwoColumnLayout = false
     
+    private let refreshControl1 = UIRefreshControl()
+    private let refreshControl2 = UIRefreshControl()
+
+    
     enum Section {
         case main
     }
@@ -29,18 +33,27 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.reactor = ViewControllerReactor()
+        genderSegmentedControl.isUserInteractionEnabled = false
         scrollView.delegate = self
         configureCollectionViewLayout(collectionView: collectionView)
         configureCollectionViewLayout(collectionView: collectionView2)
         configureDataSource(collectionView: collectionView)
         configureDataSource(collectionView: collectionView2)
+        setupRefreshControl(for: collectionView, refreshControl: refreshControl1)
+        setupRefreshControl(for: collectionView2, refreshControl: refreshControl2)
         if let reactor = self.reactor {
             bind(reactor: reactor)
             reactor.action.onNext(.selectGender(.male)) // 초기 API 호출
         }
         viewOptionButton.addTarget(self, action: #selector(toggleViewOption), for: .touchUpInside)
     }
-    
+    private func setupRefreshControl(for collectionView: UICollectionView, refreshControl: UIRefreshControl) {
+            collectionView.refreshControl = refreshControl
+            refreshControl.rx.controlEvent(.valueChanged)
+                .map { Reactor.Action.refreshData }
+                .bind(to: reactor!.action)
+                .disposed(by: disposeBag)
+        }
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         let pageIndex = Int(scrollView.contentOffset.x / scrollView.frame.size.width)
         genderSegmentedControl.selectedSegmentIndex = pageIndex
@@ -90,7 +103,7 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate {
         let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(itemHightFraction))
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
         let section = NSCollectionLayoutSection(group: group)
-        section.interGroupSpacing = 10
+       // section.interGroupSpacing = 10
         
         return UICollectionViewCompositionalLayout(section: section)
     }
@@ -101,17 +114,19 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate {
     
     
     private func applySnapshotToMen(users: [RandomMen], to collectionView: UICollectionView) {
-        var snapshot = Snapshot()
-        snapshot.appendSections([.main])
-        snapshot.appendItems(users, toSection: .main)
-        dataSource?.apply(snapshot, animatingDifferences: true)
-    }
+           var snapshot = Snapshot()
+           snapshot.appendSections([.main])
+           snapshot.appendItems(users, toSection: .main)
+           dataSource?.apply(snapshot, animatingDifferences: true)
+           refreshControl1.endRefreshing()
+       }
     
     private func applySnapshotToWomen(users: [RandomWomen], to collectionView: UICollectionView) {
         var snapshot = Snapshot2()
         snapshot.appendSections([.main])
         snapshot.appendItems(users, toSection: .main)
         dataSource2?.apply(snapshot, animatingDifferences: true)
+        refreshControl2.endRefreshing()
     }
     
     private func loadExistingData(for gender: ViewControllerReactor.Gender) {
@@ -123,19 +138,6 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate {
     }
     
     func bind(reactor: ViewControllerReactor) {
-        // 세그먼트 컨트롤 값 변경에 따른 액션 바인딩
-        genderSegmentedControl.rx.selectedSegmentIndex
-            .distinctUntilChanged()
-            .subscribe(onNext: { [weak self] index in
-                let gender = index == 0 ? ViewControllerReactor.Gender.male : .female
-                if (gender == .male && self?.reactor?.currentState.menUsers.isEmpty == true) ||
-                    (gender == .female && self?.reactor?.currentState.womenUsers.isEmpty == true) {
-                    self?.reactor?.action.onNext(.selectGender(gender))
-                } else {
-                    self?.loadExistingData(for: gender)
-                }
-            })
-            .disposed(by: disposeBag)
         
         // 스크롤 뷰의 페이지 변경에 따른 세그먼트 컨트롤 값 변경
         scrollView.rx.didEndDecelerating
@@ -144,16 +146,17 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate {
             }
             .bind(to: genderSegmentedControl.rx.selectedSegmentIndex)
             .disposed(by: disposeBag)
+        
         reactor.state.map { $0.menUsers }
             .subscribe(onNext: { [weak self] users in
-                self?.applySnapshotToMen(users: users, to: self?.collectionView ?? UICollectionView())
+                self!.loadExistingData(for: .male)
             })
             .disposed(by: disposeBag)
         
         // 여성 사용자 데이터 로드
         reactor.state.map { $0.womenUsers }
             .subscribe(onNext: { [weak self] users in
-                self?.applySnapshotToWomen(users: users, to: self?.collectionView2 ?? UICollectionView())
+                self!.loadExistingData(for: .female)
             })
             .disposed(by: disposeBag)
         
