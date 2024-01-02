@@ -141,16 +141,43 @@ class ProfileCell: UICollectionViewCell, StoryboardView {
         emailLabel.text = nil
     }
     
-    func configure(with user: RandomUser, reactor: ViewControllerReactor, columnLayout: Int) {
-        nameLabel.text = user.name.fullName
-        countryLabel.text = user.location.country
-        emailLabel.text = user.email
-        let imageUrlString = columnLayout == 1 ? user.picture.thumbnail : user.picture.medium
-            if let imageUrl = URL(string: imageUrlString) {
-                loadImage(url: imageUrl)
-            } else {
-                userProfileImageView.image = UIImage(systemName: "person.fill")
-            }
+//    func configureWithMen(user: RandomMen, reactor: ViewControllerReactor, columnLayout: Int) {
+//        configureCommon(user: user, reactor: reactor, columnLayout: columnLayout)
+//    }
+//
+//    func configureWithWomen(user: RandomWomen, reactor: ViewControllerReactor, columnLayout: Int) {
+//        configureCommon(user: user, reactor: reactor, columnLayout: columnLayout)
+//    }
+
+   
+    func configure(with user: Any, reactor: ViewControllerReactor, columnLayout: Int) {
+        var fullName = ""
+        var country = ""
+        var email = ""
+        var imageUrlString = ""
+
+        if let menUser = user as? RandomMen {
+            fullName = menUser.name.fullName
+            country = menUser.location.country
+            email = menUser.email
+            imageUrlString = columnLayout == 1 ? menUser.picture.thumbnail : menUser.picture.medium
+        } else if let womenUser = user as? RandomWomen {
+            fullName = womenUser.name.fullName
+            country = womenUser.location.country
+            email = womenUser.email
+            imageUrlString = columnLayout == 1 ? womenUser.picture.thumbnail : womenUser.picture.medium
+        }
+
+        nameLabel.text = fullName
+        countryLabel.text = country
+        emailLabel.text = email
+
+        if let imageUrl = URL(string: imageUrlString) {
+            loadImage(url: imageUrl)
+        } else {
+            userProfileImageView.image = UIImage(systemName: "person.fill")
+        }
+
         self.reactor = reactor
         updateLayout(columnLayout: columnLayout)
         bind(reactor: reactor)

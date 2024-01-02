@@ -80,7 +80,7 @@
                                                             <inset key="sectionInset" minX="0.0" minY="0.0" maxX="0.0" maxY="0.0"/>
                                                         </collectionViewFlowLayout>
                                                         <cells>
-                                                            <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" id="MqG-jT-RJl">
+                                                            <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="ProfileCell" id="MqG-jT-RJl" customClass="ProfileCell" customModule="Selection" customModuleProvider="target">
                                                                 <rect key="frame" x="0.0" y="0.0" width="127.99999999999997" height="128"/>
                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                 <collectionViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" insetsLayoutMarginsFromSafeArea="NO" id="XQN-Qa-wpD">
@@ -122,6 +122,7 @@
                     </view>
                     <connections>
                         <outlet property="collectionView" destination="VS4-ZG-JQ2" id="jjh-1B-gGo"/>
+                        <outlet property="collectionView2" destination="cx8-Sh-nvu" id="FWe-yj-Bgz"/>
                         <outlet property="genderSegmentedControl" destination="X1t-P1-y9K" id="qIf-x9-qD3"/>
                         <outlet property="scrollView" destination="kTs-Hf-ev6" id="SMS-N1-gn4"/>
                         <outlet property="viewOptionButton" destination="RGT-Ae-Oqe" id="UyL-X4-BaS"/>
