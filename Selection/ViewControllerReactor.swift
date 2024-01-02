@@ -85,7 +85,6 @@ class ViewControllerReactor: Reactor {
                 (gender == .female && currentState.isWomenDataLoaded) {
                 return Observable.empty()
             }
-            
             // API 서비스 호출
             let service: RandomUserService = (gender == .male) ? .getMenUsers : .getWomenUsers
             return self.provider.rx.request(service)

@@ -16,7 +16,7 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate {
     @IBOutlet weak var viewOptionButton: UIButton!
     @IBOutlet weak var genderSegmentedControl: UISegmentedControl!
     @IBOutlet weak var menCollectionView: UICollectionView!
-    @IBOutlet weak var womenCollectionView2: UICollectionView!
+    @IBOutlet weak var womenCollectionView: UICollectionView!
     
     private var menDataSource: MenDataSource!
     private var womenDataSource: WomenDataSource!
@@ -37,14 +37,13 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate {
         setupLongGesture()
         genderSegmentedControl.isUserInteractionEnabled = false
         scrollView.delegate = self
-        configureCollectionViewLayout(collectionView: menCollectionView)
-        configureCollectionViewLayout(collectionView: womenCollectionView2)
-        configureDataSource(collectionView: menCollectionView)
-        configureDataSource(collectionView: womenCollectionView2)
+
+        configureCollectionView(collectionView: menCollectionView)
+        configureCollectionView(collectionView: womenCollectionView)
         setupRefreshControl(for: menCollectionView, refreshControl: refreshControl1)
-        setupRefreshControl(for: womenCollectionView2, refreshControl: refreshControl2)
+        setupRefreshControl(for: womenCollectionView, refreshControl: refreshControl2)
         setupLoadMoreDataTrigger(for: menCollectionView, gender: .male)
-        setupLoadMoreDataTrigger(for: womenCollectionView2, gender: .female)
+        setupLoadMoreDataTrigger(for: womenCollectionView, gender: .female)
 
         if let reactor = self.reactor {
             bind(reactor: reactor)
@@ -58,7 +57,7 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate {
         menCollectionView.addGestureRecognizer(longPressGesture)
         
         let longPressGesture2 = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(gesture:)))
-        womenCollectionView2.addGestureRecognizer(longPressGesture2)
+        womenCollectionView.addGestureRecognizer(longPressGesture2)
     }
     
     private func setupLoadMoreDataTrigger(for collectionView: UICollectionView, gender: ViewControllerReactor.Gender) {
@@ -78,8 +77,8 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate {
             return
         }
 
-        let point = gesture.location(in: gesture.view == menCollectionView ? menCollectionView : womenCollectionView2)
-        guard let indexPath = (gesture.view == menCollectionView ? menCollectionView : womenCollectionView2).indexPathForItem(at: point),
+        let point = gesture.location(in: gesture.view == menCollectionView ? menCollectionView : womenCollectionView)
+        guard let indexPath = (gesture.view == menCollectionView ? menCollectionView : womenCollectionView).indexPathForItem(at: point),
               let reactor = reactor else {
             return
         }
@@ -107,38 +106,33 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate {
         genderSegmentedControl.selectedSegmentIndex = pageIndex
         reactor?.action.onNext(.selectGender(pageIndex == 0 ? .male : .female))
     }
-    private func configureDataSource(collectionView: UICollectionView) {
+    private func configureCollectionView(collectionView: UICollectionView) {
         if collectionView == self.menCollectionView {
+            collectionView.collectionViewLayout = createLayout(columns: 1)
             menDataSource = MenDataSource(collectionView: collectionView) { [weak self] (collectionView, indexPath, user) -> UICollectionViewCell? in
-                return self?.configureMenCell(collectionView: collectionView, indexPath: indexPath, user: user)
+                return self?.configureCell(collectionView: collectionView, indexPath: indexPath, user: user)
             }
-        } else if collectionView == self.womenCollectionView2 {
+        } else if collectionView == self.womenCollectionView {
+            collectionView.collectionViewLayout = createLayout(columns: 2)
             womenDataSource = WomenDataSource(collectionView: collectionView) { [weak self] (collectionView, indexPath, user) -> UICollectionViewCell? in
-                return self?.configureWomenCell(collectionView: collectionView, indexPath: indexPath, user: user)
+                return self?.configureCell(collectionView: collectionView, indexPath: indexPath, user: user)
             }
         }
     }
-    private func configureMenCell(collectionView: UICollectionView, indexPath: IndexPath, user: RandomMen) -> UICollectionViewCell? {
+
+    private func configureCell(collectionView: UICollectionView, indexPath: IndexPath, user: Any) -> UICollectionViewCell? {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ProfileCell", for: indexPath) as? ProfileCell else {
             fatalError("Unable to dequeue ProfileCell")
         }
         let columnLayout = self.reactor?.currentState.columnLayout ?? 1
-        cell.configure(with: user, reactor: self.reactor!, columnLayout: columnLayout)
-        return cell
-    }
-    private func configureWomenCell(collectionView: UICollectionView, indexPath: IndexPath, user: RandomWomen) -> UICollectionViewCell? {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ProfileCell", for: indexPath) as? ProfileCell else {
-            fatalError("Unable to dequeue ProfileCell")
+
+        if let user = user as? RandomMen {
+            cell.configure(with: user, reactor: self.reactor!, columnLayout: columnLayout)
+        } else if let user = user as? RandomWomen {
+            cell.configure(with: user, reactor: self.reactor!, columnLayout: columnLayout)
         }
-        let columnLayout = self.reactor?.currentState.columnLayout ?? 1
-        cell.configure(with: user, reactor: self.reactor!, columnLayout: columnLayout)
+
         return cell
-    }
-    
-    
-    private func configureCollectionViewLayout(collectionView:UICollectionView) {
-        collectionView.collectionViewLayout = createLayout(columns: 1)
-        
     }
     
     private func createLayout(columns: Int) -> UICollectionViewLayout {
@@ -181,7 +175,7 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate {
         if gender == .male {
             applySnapshotToMen(users: self.reactor?.currentState.menUsers ?? [], to: self.menCollectionView)
         } else {
-            applySnapshotToWomen(users: self.reactor?.currentState.womenUsers ?? [], to: self.womenCollectionView2)
+            applySnapshotToWomen(users: self.reactor?.currentState.womenUsers ?? [], to: self.womenCollectionView)
         }
     }
     
@@ -220,7 +214,7 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate {
                 let title = columnLayout == 2 ? "보기옵션: 2열" : "보기옵션: 1열"
                 self?.viewOptionButton.setTitle(title, for: .normal)
                 self?.menCollectionView.collectionViewLayout = self?.createLayout(columns: columnLayout) ?? UICollectionViewLayout()
-                self?.womenCollectionView2.collectionViewLayout = self?.createLayout(columns: columnLayout) ?? UICollectionViewLayout()
+                self?.womenCollectionView.collectionViewLayout = self?.createLayout(columns: columnLayout) ?? UICollectionViewLayout()
             })
             .disposed(by: disposeBag)
     }
