@@ -18,8 +18,8 @@ class ViewControllerReactor: Reactor {
         case selectGender(Gender)
         case toggleLayout
         case refreshData
-        case moreLoadData(Gender)
-        case deleteUser(Gender, IndexPath)
+        case moreLoadData
+        case deleteUser(IndexPath)
 
     }
     
@@ -33,7 +33,7 @@ class ViewControllerReactor: Reactor {
         case resetDataLoadedFlags
         case appendMenUsers([RandomMen])
         case appendWomenUsers([RandomWomen])
-        case deleteUser(Gender,IndexPath)
+        case deleteUser(IndexPath)
     }
     
     // 뷰의 상태를 나타내는 구조체
@@ -57,8 +57,9 @@ class ViewControllerReactor: Reactor {
     let provider = MoyaProvider<RandomUserService>()
     
     func mutate(action: Action) -> Observable<Mutation> {
+        let gender = currentState.selectedGender
         switch action {
-        case .moreLoadData(let gender):
+        case .moreLoadData:
             // 추가 데이터 로드
             let service: RandomUserService = (gender == .male) ? .getMenUsers : .getWomenUsers
             return self.provider.rx.request(service)
@@ -81,9 +82,9 @@ class ViewControllerReactor: Reactor {
                 .asObservable()
         case let .selectGender(gender):
             // 데이터가 이미 로드된 경우 요청을 보내지 않음
-            if (gender == .male && currentState.isMenDataLoaded) ||
-                (gender == .female && currentState.isWomenDataLoaded) {
-                return Observable.empty()
+            if (gender == .male && !currentState.menUsers.isEmpty) ||
+                (gender == .female && !currentState.womenUsers.isEmpty) {
+                return Observable.just(Mutation.setSelectedGender(gender))
             }
             // API 서비스 호출
             let service: RandomUserService = (gender == .male) ? .getMenUsers : .getWomenUsers
@@ -103,13 +104,12 @@ class ViewControllerReactor: Reactor {
                     }
                 }
                 .asObservable()
-            
+                .concat(Observable.just(Mutation.setSelectedGender(gender)))
         case .toggleLayout:
             let newLayout = currentState.columnLayout == 1 ? 2 : 1
             return Observable.just(Mutation.setLayout(newLayout))
         case .refreshData:
             // Reset data loaded flags and fetch new data
-            let gender = currentState.selectedGender
             let service: RandomUserService = (gender == .male) ? .getMenUsers : .getWomenUsers
             return self.provider.rx.request(service)
                 .filterSuccessfulStatusCodes()
@@ -129,8 +129,8 @@ class ViewControllerReactor: Reactor {
                 .asObservable()
                 .startWith(Mutation.setSelectedGender(gender))
                 .concat(Observable.just(Mutation.resetDataLoadedFlags))
-        case let .deleteUser(gender, indexPath):
-                return Observable.just(Mutation.deleteUser(gender, indexPath))
+        case let .deleteUser(indexPath):
+                return Observable.just(Mutation.deleteUser(indexPath))
             
         }
     }
@@ -149,10 +149,8 @@ class ViewControllerReactor: Reactor {
         case let .setWomenUsers(users):
             newState.womenUsers = users
             newState.isWomenDataLoaded = true  // 여성 데이터가 로드되었음을 표시
-            
         case .setError(let error):
             print("Error: \(error)")
-            
         case .resetDataLoadedFlags:
             newState.isMenDataLoaded = false
             newState.isWomenDataLoaded = false
@@ -160,7 +158,8 @@ class ViewControllerReactor: Reactor {
             newState.menUsers.append(contentsOf: newUsers)
         case let .appendWomenUsers(newUsers):
             newState.womenUsers.append(contentsOf: newUsers)
-        case let .deleteUser(gender, indexPath):
+        case let .deleteUser( indexPath):
+            let gender = currentState.selectedGender
               if gender == .male {
                   newState.menUsers.remove(at: indexPath.row)
               } else {

@@ -67,7 +67,7 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate {
               }
               .distinctUntilChanged()
               .filter { $0 }
-              .map { _ in Reactor.Action.moreLoadData(gender) }
+              .map { _ in Reactor.Action.moreLoadData }
               .bind(to: reactor!.action)
               .disposed(by: disposeBag)
       }
@@ -83,11 +83,9 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate {
             return
         }
 
-        let gender = gesture.view == menCollectionView ? ViewControllerReactor.Gender.male : ViewControllerReactor.Gender.female
-
         let alert = UIAlertController(title: nil, message: "삭제하시겠습니까?", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "확인", style: .default, handler: { _ in
-            reactor.action.onNext(.deleteUser(gender, indexPath))
+            reactor.action.onNext(.deleteUser(indexPath))
         }))
         alert.addAction(UIAlertAction(title: "취소", style: .cancel, handler: nil))
         present(alert, animated: true)
@@ -199,12 +197,6 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate {
             .subscribe(onNext: { [weak self] users in
                 self!.loadExistingData(for: .female)
             })
-            .disposed(by: disposeBag)
-        
-        // 레이아웃 변경에 따른 액션 바인딩
-        viewOptionButton.rx.tap
-            .map { Reactor.Action.toggleLayout }
-            .bind(to: reactor.action)
             .disposed(by: disposeBag)
         
         // 컬럼 레이아웃 변경에 따른 UI 업데이트
