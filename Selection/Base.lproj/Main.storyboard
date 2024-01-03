@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="22505" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="22505" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="Esf-yG-IPm">
     <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
@@ -10,7 +10,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
-        <!--View Controller-->
+        <!--랜덤 프로필 -->
         <scene sceneID="tne-QT-ifu">
             <objects>
                 <viewController storyboardIdentifier="ViewController" id="BYZ-38-t0r" customClass="ViewController" customModule="Selection" customModuleProvider="target" sceneMemberID="viewController">
@@ -19,38 +19,29 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="csc-YW-akN">
-                                <rect key="frame" x="0.0" y="59" width="393" height="759"/>
+                                <rect key="frame" x="0.0" y="103" width="393" height="715"/>
                                 <subviews>
-                                    <navigationBar contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Any-SZ-qfg">
-                                        <rect key="frame" x="0.0" y="0.0" width="393" height="50"/>
-                                        <constraints>
-                                            <constraint firstAttribute="height" constant="50" id="hLv-hc-Uv6"/>
-                                        </constraints>
-                                        <items>
-                                            <navigationItem title="랜덤 프로필" id="YnF-YM-P1B"/>
-                                        </items>
-                                    </navigationBar>
                                     <segmentedControl opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="plain" selectedSegmentIndex="0" translatesAutoresizingMaskIntoConstraints="NO" id="X1t-P1-y9K">
-                                        <rect key="frame" x="0.0" y="50" width="393" height="46.666666666666657"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="393" height="44"/>
                                         <segments>
                                             <segment title="남자"/>
                                             <segment title="여자"/>
                                         </segments>
                                     </segmentedControl>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="right" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="RGT-Ae-Oqe">
-                                        <rect key="frame" x="0.0" y="95.666666666666657" width="393" height="31.666666666666671"/>
+                                        <rect key="frame" x="0.0" y="43" width="393" height="30"/>
                                         <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="plain" title="보기옵션 : 1열 "/>
                                     </button>
                                     <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" pagingEnabled="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kTs-Hf-ev6">
-                                        <rect key="frame" x="0.0" y="127.33333333333331" width="393" height="631.66666666666674"/>
+                                        <rect key="frame" x="0.0" y="73" width="393" height="642"/>
                                         <subviews>
                                             <stackView opaque="NO" contentMode="scaleToFill" distribution="fillEqually" translatesAutoresizingMaskIntoConstraints="NO" id="2F8-IR-S0i">
-                                                <rect key="frame" x="0.0" y="0.0" width="786" height="631.66666666666663"/>
+                                                <rect key="frame" x="0.0" y="0.0" width="786" height="642"/>
                                                 <subviews>
                                                     <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="VS4-ZG-JQ2">
-                                                        <rect key="frame" x="0.0" y="0.0" width="393" height="631.66666666666663"/>
+                                                        <rect key="frame" x="0.0" y="0.0" width="393" height="642"/>
                                                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                                         <collectionViewFlowLayout key="collectionViewLayout" automaticEstimatedItemSize="YES" minimumLineSpacing="10" minimumInteritemSpacing="10" id="IMy-bR-lhK">
                                                             <size key="itemSize" width="393" height="520"/>
@@ -67,11 +58,14 @@
                                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                 </collectionViewCellContentView>
                                                                 <size key="customSize" width="393" height="520"/>
+                                                                <connections>
+                                                                    <segue destination="cuv-Vj-eMt" kind="push" identifier="imageStr" id="ANp-EE-sQr"/>
+                                                                </connections>
                                                             </collectionViewCell>
                                                         </cells>
                                                     </collectionView>
                                                     <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="cx8-Sh-nvu">
-                                                        <rect key="frame" x="393" y="0.0" width="393" height="631.66666666666663"/>
+                                                        <rect key="frame" x="393" y="0.0" width="393" height="642"/>
                                                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                                         <collectionViewFlowLayout key="collectionViewLayout" automaticEstimatedItemSize="YES" minimumLineSpacing="10" minimumInteritemSpacing="10" id="v9e-lB-Bow">
                                                             <size key="itemSize" width="128" height="128"/>
@@ -120,6 +114,7 @@
                             <constraint firstItem="csc-YW-akN" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" id="yCo-P8-UZ8"/>
                         </constraints>
                     </view>
+                    <navigationItem key="navigationItem" title="랜덤 프로필 " id="5JZ-5V-LJg"/>
                     <connections>
                         <outlet property="genderSegmentedControl" destination="X1t-P1-y9K" id="qIf-x9-qD3"/>
                         <outlet property="menCollectionView" destination="VS4-ZG-JQ2" id="yVr-d6-9rC"/>
@@ -130,9 +125,9 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="139.69465648854961" y="-2.1126760563380285"/>
+            <point key="canvasLocation" x="1066.4122137404579" y="-2.1126760563380285"/>
         </scene>
-        <!--Profile Image View Controller-->
+        <!--ProfileImageDetail-->
         <scene sceneID="IX9-Xh-eYs">
             <objects>
                 <viewController storyboardIdentifier="ProfileImageViewController" id="cuv-Vj-eMt" customClass="ProfileImageViewController" customModule="Selection" customModuleProvider="target" sceneMemberID="viewController">
@@ -140,29 +135,62 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="ham-7l-ZME">
-                                <rect key="frame" x="0.0" y="242" width="393" height="393"/>
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="vos-7f-fIV">
+                                <rect key="frame" x="0.0" y="162.33333333333331" width="393" height="596.33333333333348"/>
+                                <subviews>
+                                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="ham-7l-ZME">
+                                        <rect key="frame" x="0.0" y="0.0" width="393" height="596.33333333333337"/>
+                                    </imageView>
+                                </subviews>
                                 <constraints>
-                                    <constraint firstAttribute="width" secondItem="ham-7l-ZME" secondAttribute="height" id="KrP-1I-u5e"/>
+                                    <constraint firstItem="OdI-1E-vQX" firstAttribute="leading" secondItem="ham-7l-ZME" secondAttribute="leading" id="00P-wJ-J9z"/>
+                                    <constraint firstItem="ham-7l-ZME" firstAttribute="bottom" secondItem="OdI-1E-vQX" secondAttribute="bottom" id="ACy-mf-6hU"/>
+                                    <constraint firstItem="OdI-1E-vQX" firstAttribute="top" secondItem="ham-7l-ZME" secondAttribute="top" id="MGa-T3-LAV"/>
+                                    <constraint firstItem="ham-7l-ZME" firstAttribute="width" secondItem="mQ9-W5-UPy" secondAttribute="width" id="TEJ-cF-E4F"/>
+                                    <constraint firstItem="ham-7l-ZME" firstAttribute="trailing" secondItem="OdI-1E-vQX" secondAttribute="trailing" id="lXU-PP-OsA"/>
+                                    <constraint firstItem="ham-7l-ZME" firstAttribute="height" secondItem="mQ9-W5-UPy" secondAttribute="height" id="pWa-99-W4b"/>
                                 </constraints>
-                            </imageView>
+                                <viewLayoutGuide key="contentLayoutGuide" id="OdI-1E-vQX"/>
+                                <viewLayoutGuide key="frameLayoutGuide" id="mQ9-W5-UPy"/>
+                            </scrollView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="SE5-zv-y3B"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <constraint firstItem="ham-7l-ZME" firstAttribute="centerY" secondItem="SE5-zv-y3B" secondAttribute="centerY" id="1k4-YE-rLZ"/>
-                            <constraint firstItem="ham-7l-ZME" firstAttribute="leading" secondItem="SE5-zv-y3B" secondAttribute="leading" id="2lN-ZD-9Vh"/>
-                            <constraint firstItem="ham-7l-ZME" firstAttribute="width" secondItem="y9Y-y3-6gw" secondAttribute="width" id="8wX-bv-EUk"/>
-                            <constraint firstItem="ham-7l-ZME" firstAttribute="centerX" secondItem="SE5-zv-y3B" secondAttribute="centerX" id="gY8-ft-7w2"/>
+                            <constraint firstItem="vos-7f-fIV" firstAttribute="height" secondItem="y9Y-y3-6gw" secondAttribute="height" multiplier="0.7" id="8nS-Sw-XLa"/>
+                            <constraint firstItem="vos-7f-fIV" firstAttribute="centerX" secondItem="SE5-zv-y3B" secondAttribute="centerX" id="Vko-YO-BGH"/>
+                            <constraint firstItem="vos-7f-fIV" firstAttribute="leading" secondItem="SE5-zv-y3B" secondAttribute="leading" id="dCU-LB-hlg"/>
+                            <constraint firstItem="SE5-zv-y3B" firstAttribute="trailing" secondItem="vos-7f-fIV" secondAttribute="trailing" id="mjZ-3e-HNj"/>
+                            <constraint firstItem="vos-7f-fIV" firstAttribute="centerY" secondItem="SE5-zv-y3B" secondAttribute="centerY" id="olY-Fe-TJK"/>
                         </constraints>
                     </view>
+                    <navigationItem key="navigationItem" title="ProfileImageDetail" id="fFf-dL-kiG"/>
                     <connections>
                         <outlet property="profileImageView" destination="ham-7l-ZME" id="pmn-z0-15h"/>
+                        <outlet property="scrollView" destination="vos-7f-fIV" id="U6j-nA-3yk"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="yV1-Dk-0Nm" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="915" y="-2"/>
+            <point key="canvasLocation" x="1912" y="-2"/>
+        </scene>
+        <!--Navigation Controller-->
+        <scene sceneID="h7a-nF-hVt">
+            <objects>
+                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="Esf-yG-IPm" sceneMemberID="viewController">
+                    <toolbarItems/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="auC-da-crr">
+                        <rect key="frame" x="0.0" y="59" width="393" height="44"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <nil name="viewControllers"/>
+                    <connections>
+                        <segue destination="BYZ-38-t0r" kind="relationship" relationship="rootViewController" id="ise-Kz-c3f"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="wSG-je-MzM" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="139.69465648854961" y="-2.1126760563380285"/>
         </scene>
     </scenes>
     <resources>

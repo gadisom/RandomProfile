@@ -3,7 +3,7 @@ import RxSwift
 import ReactorKit
 import RxCocoa
 
-class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate {
+class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UICollectionViewDelegate {
     var disposeBag = DisposeBag()
     typealias Reactor = ViewControllerReactor
     typealias MenDataSource = UICollectionViewDiffableDataSource<Section, RandomMen>
@@ -44,13 +44,32 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate {
         setupRefreshControl(for: womenCollectionView, refreshControl: refreshControl2)
         setupLoadMoreDataTrigger(for: menCollectionView, gender: .male)
         setupLoadMoreDataTrigger(for: womenCollectionView, gender: .female)
-
         if let reactor = self.reactor {
             bind(reactor: reactor)
             reactor.action.onNext(.selectGender(.male)) // 초기 API 호출
         }
         viewOptionButton.addTarget(self, action: #selector(toggleViewOption), for: .touchUpInside)
     }
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "imageStr",
+           let destinationVC = segue.destination as? ProfileImageViewController,
+           let cell = sender as? UICollectionViewCell {
+            
+            // 확인: menCollectionView의 셀인지, 아니면 womenCollectionView의 셀인지
+            let isMenCell = menCollectionView.indexPath(for: cell) != nil
+            let indexPath = isMenCell ? menCollectionView.indexPath(for: cell) : womenCollectionView.indexPath(for: cell)
+
+            if let indexPath = indexPath {
+                let selectedImageUrl = isMenCell ?
+                    reactor?.currentState.menUsers[indexPath.item].picture.large :
+                    reactor?.currentState.womenUsers[indexPath.item].picture.large
+
+                destinationVC.imageUrl = selectedImageUrl
+            }
+        }
+    }
+
+
     
     private func setupLongGesture(){
         let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(gesture:)))
@@ -209,6 +228,7 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate {
                 self?.womenCollectionView.collectionViewLayout = self?.createLayout(columns: columnLayout) ?? UICollectionViewLayout()
             })
             .disposed(by: disposeBag)
+        
     }
 }
 
