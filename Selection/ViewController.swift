@@ -6,11 +6,12 @@ import RxCocoa
 class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UICollectionViewDelegate {
     var disposeBag = DisposeBag()
     typealias Reactor = ViewControllerReactor
-    typealias MenDataSource = UICollectionViewDiffableDataSource<Section, RandomMen>
-    typealias MenSnapshot = NSDiffableDataSourceSnapshot<Section, RandomMen>
+    typealias MenDataSource = UICollectionViewDiffableDataSource<Section, User>
+    typealias MenSnapshot = NSDiffableDataSourceSnapshot<Section, User>
     
-    typealias WomenDataSource = UICollectionViewDiffableDataSource<Section, RandomWomen>
-    typealias WomenSnapshot = NSDiffableDataSourceSnapshot<Section, RandomWomen>
+    
+    typealias WomenDataSource = UICollectionViewDiffableDataSource<Section, User>
+    typealias WomenSnapshot = NSDiffableDataSourceSnapshot<Section, User>
     
     @IBOutlet weak var scrollView: UIScrollView!
     @IBOutlet weak var viewOptionButton: UIButton!
@@ -24,7 +25,7 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
     
     private let refreshControl1 = UIRefreshControl()
     private let refreshControl2 = UIRefreshControl()
-
+    
     
     enum Section {
         case main
@@ -37,7 +38,7 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
         setupLongGesture()
         genderSegmentedControl.isUserInteractionEnabled = false
         scrollView.delegate = self
-
+        
         configureCollectionView(collectionView: menCollectionView)
         configureCollectionView(collectionView: womenCollectionView)
         setupRefreshControl(for: menCollectionView, refreshControl: refreshControl1)
@@ -58,18 +59,18 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
             // 확인: menCollectionView의 셀인지, 아니면 womenCollectionView의 셀인지
             let isMenCell = menCollectionView.indexPath(for: cell) != nil
             let indexPath = isMenCell ? menCollectionView.indexPath(for: cell) : womenCollectionView.indexPath(for: cell)
-
+            
             if let indexPath = indexPath {
                 let selectedImageUrl = isMenCell ?
-                    reactor?.currentState.menUsers[indexPath.item].picture.large :
-                    reactor?.currentState.womenUsers[indexPath.item].picture.large
-
+                reactor?.currentState.menUsers[indexPath.item].picture.large :
+                reactor?.currentState.womenUsers[indexPath.item].picture.large
+                
                 destinationVC.imageUrl = selectedImageUrl
             }
         }
     }
-
-
+    
+    
     
     private func setupLongGesture(){
         let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(gesture:)))
@@ -80,28 +81,28 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
     }
     
     private func setupLoadMoreDataTrigger(for collectionView: UICollectionView, gender: ViewControllerReactor.Gender) {
-          collectionView.rx.contentOffset
-              .map { [unowned collectionView] offset in
-                  return offset.y + collectionView.frame.size.height > collectionView.contentSize.height
-              }
-              .distinctUntilChanged()
-              .filter { $0 }
-              .map { _ in Reactor.Action.moreLoadData }
-              .bind(to: reactor!.action)
-              .disposed(by: disposeBag)
-      }
+        collectionView.rx.contentOffset
+            .map { [unowned collectionView] offset in
+                return offset.y + collectionView.frame.size.height > collectionView.contentSize.height
+            }
+            .distinctUntilChanged()
+            .filter { $0 }
+            .map { _ in Reactor.Action.moreLoadData }
+            .bind(to: reactor!.action)
+            .disposed(by: disposeBag)
+    }
     
     @objc func handleLongPress(gesture: UILongPressGestureRecognizer) {
         if gesture.state != .began {
             return
         }
-
+        
         let point = gesture.location(in: gesture.view == menCollectionView ? menCollectionView : womenCollectionView)
         guard let indexPath = (gesture.view == menCollectionView ? menCollectionView : womenCollectionView).indexPathForItem(at: point),
               let reactor = reactor else {
             return
         }
-
+        
         let alert = UIAlertController(title: nil, message: "삭제하시겠습니까?", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "확인", style: .default, handler: { _ in
             reactor.action.onNext(.deleteUser(indexPath))
@@ -109,14 +110,14 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
         alert.addAction(UIAlertAction(title: "취소", style: .cancel, handler: nil))
         present(alert, animated: true)
     }
-
+    
     
     private func setupRefreshControl(for collectionView: UICollectionView, refreshControl: UIRefreshControl) {
-            collectionView.refreshControl = refreshControl
-            refreshControl.rx.controlEvent(.valueChanged)
-                .map { Reactor.Action.refreshData }
-                .bind(to: reactor!.action)
-                .disposed(by: disposeBag)
+        collectionView.refreshControl = refreshControl
+        refreshControl.rx.controlEvent(.valueChanged)
+            .map { Reactor.Action.refreshData }
+            .bind(to: reactor!.action)
+            .disposed(by: disposeBag)
     }
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         let pageIndex = Int(scrollView.contentOffset.x / scrollView.frame.size.width)
@@ -127,30 +128,40 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
         if collectionView == self.menCollectionView {
             collectionView.collectionViewLayout = createLayout(columns: 1)
             menDataSource = MenDataSource(collectionView: collectionView) { [weak self] (collectionView, indexPath, user) -> UICollectionViewCell? in
-                return self?.configureCell(collectionView: collectionView, indexPath: indexPath, user: user)
+                return self?.configureCell(collectionView: collectionView, indexPath: indexPath)
             }
         } else if collectionView == self.womenCollectionView {
             collectionView.collectionViewLayout = createLayout(columns: 2)
             womenDataSource = WomenDataSource(collectionView: collectionView) { [weak self] (collectionView, indexPath, user) -> UICollectionViewCell? in
-                return self?.configureCell(collectionView: collectionView, indexPath: indexPath, user: user)
+                return self?.configureCell(collectionView: collectionView, indexPath: indexPath)
             }
         }
     }
-
-    private func configureCell(collectionView: UICollectionView, indexPath: IndexPath, user: Any) -> UICollectionViewCell? {
+    
+    private func configureCell(collectionView: UICollectionView, indexPath: IndexPath) -> UICollectionViewCell? {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ProfileCell", for: indexPath) as? ProfileCell else {
             fatalError("Unable to dequeue ProfileCell")
         }
         let columnLayout = self.reactor?.currentState.columnLayout ?? 1
-
-        if let user = user as? RandomMen {
-            cell.configure(with: user, reactor: self.reactor!, columnLayout: columnLayout)
-        } else if let user = user as? RandomWomen {
+        
+        // 현재 컬렉션 뷰의 데이터 소스에서 사용자 정보를 가져옵니다.
+        let user: User?
+        if collectionView == menCollectionView {
+            user = reactor?.currentState.menUsers[indexPath.row]
+        } else if collectionView == womenCollectionView {
+            user = reactor?.currentState.womenUsers[indexPath.row]
+        } else {
+            user = nil
+        }
+        
+        // user가 nil이 아닐 경우에만 셀을 구성합니다.
+        if let user = user {
             cell.configure(with: user, reactor: self.reactor!, columnLayout: columnLayout)
         }
-
+        
         return cell
     }
+    
     
     private func createLayout(columns: Int) -> UICollectionViewLayout {
         let itemWidthFraction: CGFloat = columns == 1 ? 1 : 0.5
@@ -162,7 +173,7 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
         let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(itemHightFraction))
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
         let section = NSCollectionLayoutSection(group: group)
-       // section.interGroupSpacing = 10
+        // section.interGroupSpacing = 10
         
         return UICollectionViewCompositionalLayout(section: section)
     }
@@ -172,15 +183,15 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
     }
     
     
-    private func applySnapshotToMen(users: [RandomMen], to collectionView: UICollectionView) {
-           var snapshot = MenSnapshot()
-           snapshot.appendSections([.main])
-           snapshot.appendItems(users, toSection: .main)
-           menDataSource?.apply(snapshot, animatingDifferences: true)
-           refreshControl1.endRefreshing()
-       }
+    private func applySnapshotToMen(users: [User], to collectionView: UICollectionView) {
+        var snapshot = MenSnapshot()
+        snapshot.appendSections([.main])
+        snapshot.appendItems(users, toSection: .main)
+        menDataSource?.apply(snapshot, animatingDifferences: true)
+        refreshControl1.endRefreshing()
+    }
     
-    private func applySnapshotToWomen(users: [RandomWomen], to collectionView: UICollectionView) {
+    private func applySnapshotToWomen(users: [User], to collectionView: UICollectionView) {
         var snapshot = WomenSnapshot()
         snapshot.appendSections([.main])
         snapshot.appendItems(users, toSection: .main)

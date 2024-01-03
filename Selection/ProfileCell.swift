@@ -141,40 +141,31 @@ class ProfileCell: UICollectionViewCell, StoryboardView {
         emailLabel.text = nil
     }
    
-    func configure(with user: Any, reactor: ViewControllerReactor, columnLayout: Int) {
-        var fullName = ""
-        var country = ""
-        var email = ""
-        var imageUrlString = ""
+    func configure(with user: User, reactor: ViewControllerReactor, columnLayout: Int) {
+        // 사용자 정보 설정
+        let fullName = user.name.fullName
+        let country = user.location.country
+        let email = user.email
+        let imageUrlString = columnLayout == 1 ? user.picture.thumbnail : user.picture.medium
 
-        if let menUser = user as? RandomMen {
-            fullName = menUser.name.fullName
-            country = menUser.location.country
-            email = menUser.email
-            imageUrlString = columnLayout == 1 ? menUser.picture.thumbnail : menUser.picture.medium
-            print("imgaeStr:\(imageUrlString)")
-        } else if let womenUser = user as? RandomWomen {
-            fullName = womenUser.name.fullName
-            country = womenUser.location.country
-            email = womenUser.email
-            imageUrlString = columnLayout == 1 ? womenUser.picture.thumbnail : womenUser.picture.medium
-        }
-
+        // UI 컴포넌트에 데이터 설정
         nameLabel.text = fullName
         countryLabel.text = country
         emailLabel.text = email
 
+        // 이미지 로드
         if let imageUrl = URL(string: imageUrlString) {
             loadImage(url: imageUrl)
         } else {
             userProfileImageView.image = UIImage(systemName: "person.fill")
         }
 
+        // Reactor 및 레이아웃 설정
         self.reactor = reactor
         updateLayout(columnLayout: columnLayout)
         bind(reactor: reactor)
     }
-    
+
     func bind(reactor: ViewControllerReactor) {
         reactor.state
             .map { $0.columnLayout }

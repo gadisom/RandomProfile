@@ -27,12 +27,12 @@ class ViewControllerReactor: Reactor {
     enum Mutation {
         case setSelectedGender(Gender)
         case setLayout(Int)
-        case setMenUsers([RandomMen])
-        case setWomenUsers([RandomWomen])
+        case setMenUsers([User])
+        case setWomenUsers([User])
         case setError(Error)
         case resetDataLoadedFlags
-        case appendMenUsers([RandomMen])
-        case appendWomenUsers([RandomWomen])
+        case appendMenUsers([User])
+        case appendWomenUsers([User])
         case deleteUser(IndexPath)
     }
     
@@ -40,8 +40,8 @@ class ViewControllerReactor: Reactor {
     struct State {
         var selectedGender: Gender
         var columnLayout: Int
-        var menUsers: [RandomMen]
-        var womenUsers: [RandomWomen]
+        var menUsers: [User]
+        var womenUsers: [User]
         var isMenDataLoaded : Bool
         var isWomenDataLoaded : Bool
     }
@@ -67,11 +67,11 @@ class ViewControllerReactor: Reactor {
                 .flatMap { response -> Single<Mutation> in
                     do {
                         if gender == .male {
-                            let menResponse = try response.map(RandomMenResponse.self)
+                            let menResponse = try response.map(UserResponse.self)
                             let newUsers = self.currentState.menUsers + menResponse.results
                             return Single.just(Mutation.setMenUsers(newUsers))
                         } else {
-                            let womenResponse = try response.map(RandomWomenResponse.self)
+                            let womenResponse = try response.map(UserResponse.self)
                             let newUsers = self.currentState.womenUsers + womenResponse.results
                             return Single.just(Mutation.setWomenUsers(newUsers))
                         }
@@ -86,17 +86,20 @@ class ViewControllerReactor: Reactor {
                 (gender == .female && !currentState.womenUsers.isEmpty) {
                 return Observable.just(Mutation.setSelectedGender(gender))
             }
-            // API 서비스 호출
+            // API 서비스 호출               
+            print("출력 ")
+
             let service: RandomUserService = (gender == .male) ? .getMenUsers : .getWomenUsers
             return self.provider.rx.request(service)
                 .filterSuccessfulStatusCodes()
                 .flatMap { response -> Single<Mutation> in
                     do {
                         if gender == .male {
-                            let menResponse = try response.map(RandomMenResponse.self)
+                            
+                            let menResponse = try response.map(UserResponse.self)
                             return Single.just(Mutation.setMenUsers(menResponse.results))
                         } else {
-                            let womenResponse = try response.map(RandomWomenResponse.self)
+                            let womenResponse = try response.map(UserResponse.self)
                             return Single.just(Mutation.setWomenUsers(womenResponse.results))
                         }
                     } catch {
@@ -111,15 +114,16 @@ class ViewControllerReactor: Reactor {
         case .refreshData:
             // Reset data loaded flags and fetch new data
             let service: RandomUserService = (gender == .male) ? .getMenUsers : .getWomenUsers
+            print("새로고침 ")
             return self.provider.rx.request(service)
                 .filterSuccessfulStatusCodes()
                 .flatMap { response -> Single<Mutation> in
                     do {
                         if gender == .male {
-                            let menResponse = try response.map(RandomMenResponse.self)
+                            let menResponse = try response.map(UserResponse.self)
                             return Single.just(Mutation.setMenUsers(menResponse.results))
                         } else {
-                            let womenResponse = try response.map(RandomWomenResponse.self)
+                            let womenResponse = try response.map(UserResponse.self)
                             return Single.just(Mutation.setWomenUsers(womenResponse.results))
                         }
                     } catch {
