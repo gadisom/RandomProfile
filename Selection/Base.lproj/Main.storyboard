@@ -33,6 +33,9 @@
                                         <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="plain" title="보기옵션 : 1열 "/>
+                                        <connections>
+                                            <action selector="viewOptionButton:" destination="BYZ-38-t0r" eventType="touchUpInside" id="2zP-F8-YH5"/>
+                                        </connections>
                                     </button>
                                     <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" pagingEnabled="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kTs-Hf-ev6">
                                         <rect key="frame" x="0.0" y="73" width="393" height="642"/>

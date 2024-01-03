@@ -19,13 +19,7 @@ struct User: Decodable, Hashable {
     let name: Name
     let location: Location
     let picture : Picture
-//    //init(gender: String = "", email: String = "", name: Name = Name(title: "", first: "", last: ""), location: Location = Location(country: ""), picture: Picture = Picture(thumbnail: "", medium: "", large: "")) {
-//            self.gender = gender
-//            self.email = email
-//            self.name = name
-//            self.location = location
-//            self.picture = picture
-//        }
+
     struct Name: Decodable, Hashable {
         let title: String
         let first: String

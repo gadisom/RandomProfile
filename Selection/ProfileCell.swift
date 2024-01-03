@@ -91,7 +91,7 @@ class ProfileCell: UICollectionViewCell, StoryboardView {
         
         // 2열 레이아웃 제약 조건
         twoColumnConstraints = [
-                userProfileImageView.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 1),
+            userProfileImageView.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.9),
                 userProfileImageView.topAnchor.constraint(equalTo: topAnchor),
                 userProfileImageView.centerXAnchor.constraint(equalTo: centerXAnchor),
 
@@ -106,7 +106,7 @@ class ProfileCell: UICollectionViewCell, StoryboardView {
                 emailLabel.topAnchor.constraint(equalTo: countryLabel.bottomAnchor, constant: 4),
                 emailLabel.leadingAnchor.constraint(equalTo: nameLabel.leadingAnchor),
                 emailLabel.trailingAnchor.constraint(equalTo: nameLabel.trailingAnchor),
-                emailLabel.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -10)
+                //emailLabel.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -10)
             ]
         NSLayoutConstraint.activate(oneColumnConstraints)
     }

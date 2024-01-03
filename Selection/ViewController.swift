@@ -6,21 +6,20 @@ import RxCocoa
 class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UICollectionViewDelegate {
     var disposeBag = DisposeBag()
     typealias Reactor = ViewControllerReactor
-    typealias MenDataSource = UICollectionViewDiffableDataSource<Section, User>
-    typealias MenSnapshot = NSDiffableDataSourceSnapshot<Section, User>
+    typealias DataSource = UICollectionViewDiffableDataSource<Section, User>
+    typealias Snapshot = NSDiffableDataSourceSnapshot<Section, User>
     
-    
-    typealias WomenDataSource = UICollectionViewDiffableDataSource<Section, User>
-    typealias WomenSnapshot = NSDiffableDataSourceSnapshot<Section, User>
-    
+    @IBAction func viewOptionButton(_ sender: Any) {
+        reactor?.action.onNext(.toggleLayout)
+    }
     @IBOutlet weak var scrollView: UIScrollView!
     @IBOutlet weak var viewOptionButton: UIButton!
     @IBOutlet weak var genderSegmentedControl: UISegmentedControl!
     @IBOutlet weak var menCollectionView: UICollectionView!
     @IBOutlet weak var womenCollectionView: UICollectionView!
     
-    private var menDataSource: MenDataSource!
-    private var womenDataSource: WomenDataSource!
+    private var menDataSource: DataSource!
+    private var womenDataSource: DataSource!
     private var isTwoColumnLayout = false
     
     private let refreshControl1 = UIRefreshControl()
@@ -49,7 +48,6 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
             bind(reactor: reactor)
             reactor.action.onNext(.selectGender(.male)) // 초기 API 호출
         }
-        viewOptionButton.addTarget(self, action: #selector(toggleViewOption), for: .touchUpInside)
     }
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "imageStr",
@@ -127,12 +125,12 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
     private func configureCollectionView(collectionView: UICollectionView) {
         if collectionView == self.menCollectionView {
             collectionView.collectionViewLayout = createLayout(columns: 1)
-            menDataSource = MenDataSource(collectionView: collectionView) { [weak self] (collectionView, indexPath, user) -> UICollectionViewCell? in
+            menDataSource = DataSource(collectionView: collectionView) { [weak self] (collectionView, indexPath, user) -> UICollectionViewCell? in
                 return self?.configureCell(collectionView: collectionView, indexPath: indexPath)
             }
         } else if collectionView == self.womenCollectionView {
             collectionView.collectionViewLayout = createLayout(columns: 2)
-            womenDataSource = WomenDataSource(collectionView: collectionView) { [weak self] (collectionView, indexPath, user) -> UICollectionViewCell? in
+            womenDataSource = DataSource(collectionView: collectionView) { [weak self] (collectionView, indexPath, user) -> UICollectionViewCell? in
                 return self?.configureCell(collectionView: collectionView, indexPath: indexPath)
             }
         }
@@ -178,33 +176,16 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
         return UICollectionViewCompositionalLayout(section: section)
     }
     
-    @objc private func toggleViewOption() {
-        reactor?.action.onNext(.toggleLayout)
-    }
-    
-    
-    private func applySnapshotToMen(users: [User], to collectionView: UICollectionView) {
-        var snapshot = MenSnapshot()
+    private func applySnapshot(users: [User], to collectionView: UICollectionView, refreshControl: UIRefreshControl) {
+        var snapshot = Snapshot()
         snapshot.appendSections([.main])
         snapshot.appendItems(users, toSection: .main)
-        menDataSource?.apply(snapshot, animatingDifferences: true)
-        refreshControl1.endRefreshing()
-    }
-    
-    private func applySnapshotToWomen(users: [User], to collectionView: UICollectionView) {
-        var snapshot = WomenSnapshot()
-        snapshot.appendSections([.main])
-        snapshot.appendItems(users, toSection: .main)
-        womenDataSource?.apply(snapshot, animatingDifferences: true)
-        refreshControl2.endRefreshing()
-    }
-    
-    private func loadExistingData(for gender: ViewControllerReactor.Gender) {
-        if gender == .male {
-            applySnapshotToMen(users: self.reactor?.currentState.menUsers ?? [], to: self.menCollectionView)
-        } else {
-            applySnapshotToWomen(users: self.reactor?.currentState.womenUsers ?? [], to: self.womenCollectionView)
+        if collectionView == menCollectionView {
+            menDataSource?.apply(snapshot, animatingDifferences: true)
+        } else if collectionView == womenCollectionView {
+            womenDataSource?.apply(snapshot, animatingDifferences: true)
         }
+        refreshControl.endRefreshing()
     }
     
     func bind(reactor: ViewControllerReactor) {
@@ -215,17 +196,17 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
             }
             .bind(to: genderSegmentedControl.rx.selectedSegmentIndex)
             .disposed(by: disposeBag)
-        
+
         reactor.state.map { $0.menUsers }
             .subscribe(onNext: { [weak self] users in
-                self!.loadExistingData(for: .male)
+                self?.applySnapshot(users: users, to: self!.menCollectionView, refreshControl: self!.refreshControl1)
             })
             .disposed(by: disposeBag)
         
         // 여성 사용자 데이터 로드
         reactor.state.map { $0.womenUsers }
             .subscribe(onNext: { [weak self] users in
-                self!.loadExistingData(for: .female)
+                self?.applySnapshot(users: users, to: self!.womenCollectionView, refreshControl: self!.refreshControl2)
             })
             .disposed(by: disposeBag)
         
