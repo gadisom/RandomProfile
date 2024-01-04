@@ -44,30 +44,43 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
     }
     //MARK: - CollectionView 설정
     private func configureCollectionView(collectionView: UICollectionView, refreshControl: UIRefreshControl) {
-        if collectionView == self.menCollectionView {
-            collectionView.collectionViewLayout = createLayout(columns: 1)
-            menDataSource = DataSource(collectionView: collectionView) { [weak self] (collectionView, indexPath, user) -> UICollectionViewCell? in
-                return self?.configureCell(collectionView: collectionView, indexPath: indexPath)
-            }
-        } else if collectionView == self.womenCollectionView {
-            collectionView.collectionViewLayout = createLayout(columns: 2)
-            womenDataSource = DataSource(collectionView: collectionView) { [weak self] (collectionView, indexPath, user) -> UICollectionViewCell? in
-                return self?.configureCell(collectionView: collectionView, indexPath: indexPath)
-            }
+        let isMenCollectionView = collectionView == self.menCollectionView
+        let columns = isMenCollectionView ? 1 : 2
+        let gender = isMenCollectionView ? Reactor.Gender.male : .female
+        
+        collectionView.collectionViewLayout = createLayout(columns: columns)
+        let dataSource = DataSource(collectionView: collectionView) { [weak self] (collectionView, indexPath, user) -> UICollectionViewCell? in
+            return self?.configureCell(collectionView: collectionView, indexPath: indexPath)
+        }
+        
+        if isMenCollectionView {
+            menDataSource = dataSource
+        } else {
+            womenDataSource = dataSource
         }
         collectionView.refreshControl = refreshControl
         refreshControl.rx.controlEvent(.valueChanged)
             .map { Reactor.Action.refreshData }
             .bind(to: reactor!.action)
             .disposed(by: disposeBag)
+        collectionView.rx.contentOffset
+            .filter { [unowned self] _ in self.reactor?.currentState.selectedGender == gender }
+            .map { offset in
+                offset.y + collectionView.frame.size.height > collectionView.contentSize.height
+            }
+            .distinctUntilChanged()
+            .filter { $0 }
+            .map { _ in Reactor.Action.moreLoadData }
+            .bind(to: reactor!.action)
+            .disposed(by: disposeBag)
+        
     }
-
+    
     private func configureCell(collectionView: UICollectionView, indexPath: IndexPath) -> UICollectionViewCell? {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ProfileCell", for: indexPath) as? ProfileCell else {
             fatalError("Unable to dequeue ProfileCell")
         }
         let columnLayout = self.reactor?.currentState.columnLayout ?? 1
-        
         // 현재 컬렉션 뷰의 데이터 소스에서 사용자 정보를 가져온다.
         let user: User?
         if collectionView == menCollectionView {
@@ -106,7 +119,7 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
         
         let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(itemHightFraction))
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
-        let section = NSCollectionLayoutSection(group: group)        
+        let section = NSCollectionLayoutSection(group: group)
         return UICollectionViewCompositionalLayout(section: section)
     }
     //MARK: - View 제스처 설정
@@ -136,7 +149,7 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
         let longPressGesture2 = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(gesture:)))
         womenCollectionView.addGestureRecognizer(longPressGesture2)
     }
-
+    
     @objc func handleLongPress(gesture: UILongPressGestureRecognizer) {
         if gesture.state != .began {
             return
@@ -170,7 +183,7 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
             }
             .bind(to: genderSegmentedControl.rx.selectedSegmentIndex)
             .disposed(by: disposeBag)
-
+        
         reactor.state.map { $0.menUsers }
             .subscribe(onNext: { [weak self] users in
                 self?.applySnapshot(users: users, to: self!.menCollectionView, refreshControl: self!.menRefreshControl)
@@ -193,24 +206,6 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
                 self?.menCollectionView.collectionViewLayout = self?.createLayout(columns: columnLayout) ?? UICollectionViewLayout()
                 self?.womenCollectionView.collectionViewLayout = self?.createLayout(columns: columnLayout) ?? UICollectionViewLayout()
             })
-            .disposed(by: disposeBag)
-        menCollectionView.rx.contentOffset
-                .map { [unowned self] offset in
-                    offset.y + self.menCollectionView.frame.size.height > self.menCollectionView.contentSize.height
-                }
-                .distinctUntilChanged()
-                .filter { $0 }
-                .map { _ in Reactor.Action.moreLoadData }
-                .bind(to: reactor.action)
-                .disposed(by: disposeBag)
-        womenCollectionView.rx.contentOffset
-            .map { [unowned self] offset in
-                offset.y + self.womenCollectionView.frame.size.height > self.womenCollectionView.contentSize.height
-            }
-            .distinctUntilChanged()
-            .filter { $0 }
-            .map { _ in Reactor.Action.moreLoadData }
-            .bind(to: reactor.action)
             .disposed(by: disposeBag)
         
     }

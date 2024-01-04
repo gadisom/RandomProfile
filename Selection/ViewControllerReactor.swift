@@ -29,10 +29,8 @@ class ViewControllerReactor: Reactor {
         case setLayout(Int)
         case setMenUsers([User])
         case setWomenUsers([User])
-        case setError(Error)
-        case appendMenUsers([User])
-        case appendWomenUsers([User])
         case deleteUser(IndexPath)
+        case setError(Error)
     }
     
     // 뷰의 상태를 나타내는 구조체
@@ -41,13 +39,36 @@ class ViewControllerReactor: Reactor {
         var columnLayout: Int
         var menUsers: [User]
         var womenUsers: [User]
-       
+        
     }
     
-    // 성별을 나타내는 열거형
     enum Gender {
         case male
         case female
+    }
+    private func loadData(for gender: Gender, isMoreData: Bool = false) -> Observable<Mutation> {
+        let service: RandomUserService = (gender == .male) ? .getMenUsers : .getWomenUsers
+        return self.provider.rx.request(service)
+            .filterSuccessfulStatusCodes()
+            .flatMap { response -> Single<Mutation> in
+                do {
+                    let userResponse = try response.map(UserResponse.self)
+                    let newUsers = userResponse.results
+                    if isMoreData {
+                        // 기존 사용자 목록에 새 사용자 추가
+                        print("\(gender) 추가")
+                        let updatedUsers = gender == .male ? self.currentState.menUsers + newUsers : self.currentState.womenUsers + newUsers
+                        return Single.just(gender == .male ? Mutation.setMenUsers(updatedUsers) : Mutation.setWomenUsers(updatedUsers))
+                    } else {
+                        // 새 사용자 목록 설정
+                        print("\(gender) 설정")
+                        return Single.just(gender == .male ? Mutation.setMenUsers(newUsers) : Mutation.setWomenUsers(newUsers))
+                    }
+                } catch {
+                    return Single.just(Mutation.setError(error))
+                }
+            }
+            .asObservable()
     }
     
     // 초기 상태 설정
@@ -58,88 +79,31 @@ class ViewControllerReactor: Reactor {
         let gender = currentState.selectedGender
         switch action {
         case let .selectGender(gender):
-            // 데이터가 이미 로드된 경우 요청을 보내지 않음
-            if (gender == .male && !currentState.menUsers.isEmpty) ||
-                (gender == .female && !currentState.womenUsers.isEmpty) {
-                return Observable.just(Mutation.setSelectedGender(gender))
+            print("\(action)-\(gender)")
+            var mutations: [Observable<Mutation>] = [Observable.just(Mutation.setSelectedGender(gender))]
+            // 데이터가 없는 경우에만 데이터 로드
+            if (gender == .male && currentState.menUsers.isEmpty) ||
+                (gender == .female && currentState.womenUsers.isEmpty) {
+                mutations.append(loadData(for: gender, isMoreData: false))
             }
-            // API 서비스 호출
-            print("출력 ")
-            
-            let service: RandomUserService = (gender == .male) ? .getMenUsers : .getWomenUsers
-            return self.provider.rx.request(service)
-                .filterSuccessfulStatusCodes()
-                .flatMap { response -> Single<Mutation> in
-                    do {
-                        if gender == .male {
-                            
-                            let menResponse = try response.map(UserResponse.self)
-                            return Single.just(Mutation.setMenUsers(menResponse.results))
-                        } else {
-                            let womenResponse = try response.map(UserResponse.self)
-                            return Single.just(Mutation.setWomenUsers(womenResponse.results))
-                        }
-                    } catch {
-                        return Single.just(Mutation.setError(error))
-                    }
-                }
-                .asObservable()
-                .concat(Observable.just(Mutation.setSelectedGender(gender)))
-            
+            return Observable.concat(mutations)
+        case .refreshData:
+            print("\(action)-\(gender)")
+            return loadData(for: gender, isMoreData: false)
         case .toggleLayout:
+            print("\(action)-\(gender)")
             let newLayout = currentState.columnLayout == 1 ? 2 : 1
             return Observable.just(Mutation.setLayout(newLayout))
-        case .refreshData:
-            // Reset data loaded flags and fetch new data
-            let service: RandomUserService = (gender == .male) ? .getMenUsers : .getWomenUsers
-            return self.provider.rx.request(service)
-                .filterSuccessfulStatusCodes()
-                .flatMap { response -> Single<Mutation> in
-                    do {
-                        if gender == .male {
-                            print("남자 새로고침 ")
-                            let menResponse = try response.map(UserResponse.self)
-                            return Single.just(Mutation.setMenUsers(menResponse.results))
-                        } else {
-                            print("여자 새로고침 ")
-
-                            let womenResponse = try response.map(UserResponse.self)
-                            return Single.just(Mutation.setWomenUsers(womenResponse.results))
-                        }
-                    } catch {
-                        return Single.just(Mutation.setError(error))
-                    }
-                }
-                .asObservable()
-                .startWith(Mutation.setSelectedGender(gender))
-                
         case .moreLoadData:
             // 추가 데이터 로드
-            let service: RandomUserService = (gender == .male) ? .getMenUsers : .getWomenUsers
-            return self.provider.rx.request(service)
-                .filterSuccessfulStatusCodes()
-                .flatMap { response -> Single<Mutation> in
-                    do {
-                        if gender == .male {
-                            let menResponse = try response.map(UserResponse.self)
-                            let newUsers = self.currentState.menUsers + menResponse.results
-                            return Single.just(Mutation.setMenUsers(newUsers))
-                        } else {
-                            let womenResponse = try response.map(UserResponse.self)
-                            let newUsers = self.currentState.womenUsers + womenResponse.results
-                            return Single.just(Mutation.setWomenUsers(newUsers))
-                        }
-                    } catch {
-                        return Single.just(Mutation.setError(error))
-                    }
-                }
-                .asObservable()
+            print("\(action)-\(gender)")
+            return loadData(for: gender, isMoreData: true)
         case let .deleteUser(indexPath):
+            print("\(action)-\(gender)")
             return Observable.just(Mutation.deleteUser(indexPath))
-
+            
         }
     }
-    
     // 뮤테이션으로 상태를 변경하는 함수
     func reduce(state: State, mutation: Mutation) -> State {
         var newState = state
@@ -152,13 +116,8 @@ class ViewControllerReactor: Reactor {
             newState.menUsers = users
         case let .setWomenUsers(users):
             newState.womenUsers = users
-
         case .setError(let error):
             print("Error: \(error)")
-        case let .appendMenUsers(newUsers):
-            newState.menUsers.append(contentsOf: newUsers)
-        case let .appendWomenUsers(newUsers):
-            newState.womenUsers.append(contentsOf: newUsers)
         case let .deleteUser( indexPath):
             let gender = currentState.selectedGender
             if gender == .male {
