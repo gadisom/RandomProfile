@@ -20,7 +20,7 @@ class ViewControllerReactor: Reactor {
         case refreshData
         case moreLoadData
         case deleteUser(IndexPath)
-
+        
     }
     
     // 상태 변화를 나타내는 열거형
@@ -30,7 +30,6 @@ class ViewControllerReactor: Reactor {
         case setMenUsers([User])
         case setWomenUsers([User])
         case setError(Error)
-        case resetDataLoadedFlags
         case appendMenUsers([User])
         case appendWomenUsers([User])
         case deleteUser(IndexPath)
@@ -42,8 +41,7 @@ class ViewControllerReactor: Reactor {
         var columnLayout: Int
         var menUsers: [User]
         var womenUsers: [User]
-        var isMenDataLoaded : Bool
-        var isWomenDataLoaded : Bool
+       
     }
     
     // 성별을 나타내는 열거형
@@ -53,12 +51,68 @@ class ViewControllerReactor: Reactor {
     }
     
     // 초기 상태 설정
-    let initialState: State = State(selectedGender: .male, columnLayout: 1, menUsers: [], womenUsers: [], isMenDataLoaded: false, isWomenDataLoaded: false)
+    let initialState: State = State(selectedGender: .male, columnLayout: 1, menUsers: [], womenUsers: [])
     let provider = MoyaProvider<RandomUserService>()
     
     func mutate(action: Action) -> Observable<Mutation> {
         let gender = currentState.selectedGender
         switch action {
+        case let .selectGender(gender):
+            // 데이터가 이미 로드된 경우 요청을 보내지 않음
+            if (gender == .male && !currentState.menUsers.isEmpty) ||
+                (gender == .female && !currentState.womenUsers.isEmpty) {
+                return Observable.just(Mutation.setSelectedGender(gender))
+            }
+            // API 서비스 호출
+            print("출력 ")
+            
+            let service: RandomUserService = (gender == .male) ? .getMenUsers : .getWomenUsers
+            return self.provider.rx.request(service)
+                .filterSuccessfulStatusCodes()
+                .flatMap { response -> Single<Mutation> in
+                    do {
+                        if gender == .male {
+                            
+                            let menResponse = try response.map(UserResponse.self)
+                            return Single.just(Mutation.setMenUsers(menResponse.results))
+                        } else {
+                            let womenResponse = try response.map(UserResponse.self)
+                            return Single.just(Mutation.setWomenUsers(womenResponse.results))
+                        }
+                    } catch {
+                        return Single.just(Mutation.setError(error))
+                    }
+                }
+                .asObservable()
+                .concat(Observable.just(Mutation.setSelectedGender(gender)))
+            
+        case .toggleLayout:
+            let newLayout = currentState.columnLayout == 1 ? 2 : 1
+            return Observable.just(Mutation.setLayout(newLayout))
+        case .refreshData:
+            // Reset data loaded flags and fetch new data
+            let service: RandomUserService = (gender == .male) ? .getMenUsers : .getWomenUsers
+            return self.provider.rx.request(service)
+                .filterSuccessfulStatusCodes()
+                .flatMap { response -> Single<Mutation> in
+                    do {
+                        if gender == .male {
+                            print("남자 새로고침 ")
+                            let menResponse = try response.map(UserResponse.self)
+                            return Single.just(Mutation.setMenUsers(menResponse.results))
+                        } else {
+                            print("여자 새로고침 ")
+
+                            let womenResponse = try response.map(UserResponse.self)
+                            return Single.just(Mutation.setWomenUsers(womenResponse.results))
+                        }
+                    } catch {
+                        return Single.just(Mutation.setError(error))
+                    }
+                }
+                .asObservable()
+                .startWith(Mutation.setSelectedGender(gender))
+                
         case .moreLoadData:
             // 추가 데이터 로드
             let service: RandomUserService = (gender == .male) ? .getMenUsers : .getWomenUsers
@@ -80,62 +134,9 @@ class ViewControllerReactor: Reactor {
                     }
                 }
                 .asObservable()
-        case let .selectGender(gender):
-            // 데이터가 이미 로드된 경우 요청을 보내지 않음
-            if (gender == .male && !currentState.menUsers.isEmpty) ||
-                (gender == .female && !currentState.womenUsers.isEmpty) {
-                return Observable.just(Mutation.setSelectedGender(gender))
-            }
-            // API 서비스 호출               
-            print("출력 ")
-
-            let service: RandomUserService = (gender == .male) ? .getMenUsers : .getWomenUsers
-            return self.provider.rx.request(service)
-                .filterSuccessfulStatusCodes()
-                .flatMap { response -> Single<Mutation> in
-                    do {
-                        if gender == .male {
-                            
-                            let menResponse = try response.map(UserResponse.self)
-                            return Single.just(Mutation.setMenUsers(menResponse.results))
-                        } else {
-                            let womenResponse = try response.map(UserResponse.self)
-                            return Single.just(Mutation.setWomenUsers(womenResponse.results))
-                        }
-                    } catch {
-                        return Single.just(Mutation.setError(error))
-                    }
-                }
-                .asObservable()
-                .concat(Observable.just(Mutation.setSelectedGender(gender)))
-        case .toggleLayout:
-            let newLayout = currentState.columnLayout == 1 ? 2 : 1
-            return Observable.just(Mutation.setLayout(newLayout))
-        case .refreshData:
-            // Reset data loaded flags and fetch new data
-            let service: RandomUserService = (gender == .male) ? .getMenUsers : .getWomenUsers
-            print("새로고침 ")
-            return self.provider.rx.request(service)
-                .filterSuccessfulStatusCodes()
-                .flatMap { response -> Single<Mutation> in
-                    do {
-                        if gender == .male {
-                            let menResponse = try response.map(UserResponse.self)
-                            return Single.just(Mutation.setMenUsers(menResponse.results))
-                        } else {
-                            let womenResponse = try response.map(UserResponse.self)
-                            return Single.just(Mutation.setWomenUsers(womenResponse.results))
-                        }
-                    } catch {
-                        return Single.just(Mutation.setError(error))
-                    }
-                }
-                .asObservable()
-                .startWith(Mutation.setSelectedGender(gender))
-                .concat(Observable.just(Mutation.resetDataLoadedFlags))
         case let .deleteUser(indexPath):
-                return Observable.just(Mutation.deleteUser(indexPath))
-            
+            return Observable.just(Mutation.deleteUser(indexPath))
+
         }
     }
     
@@ -149,26 +150,22 @@ class ViewControllerReactor: Reactor {
             newState.columnLayout = layout
         case let .setMenUsers(users):
             newState.menUsers = users
-            newState.isMenDataLoaded = true // 남성 데이터가 로듣
         case let .setWomenUsers(users):
             newState.womenUsers = users
-            newState.isWomenDataLoaded = true  // 여성 데이터가 로드되었음을 표시
+
         case .setError(let error):
             print("Error: \(error)")
-        case .resetDataLoadedFlags:
-            newState.isMenDataLoaded = false
-            newState.isWomenDataLoaded = false
         case let .appendMenUsers(newUsers):
             newState.menUsers.append(contentsOf: newUsers)
         case let .appendWomenUsers(newUsers):
             newState.womenUsers.append(contentsOf: newUsers)
         case let .deleteUser( indexPath):
             let gender = currentState.selectedGender
-              if gender == .male {
-                  newState.menUsers.remove(at: indexPath.row)
-              } else {
-                  newState.womenUsers.remove(at: indexPath.row)
-              }
+            if gender == .male {
+                newState.menUsers.remove(at: indexPath.row)
+            } else {
+                newState.womenUsers.remove(at: indexPath.row)
+            }
         }
         return newState
     }
