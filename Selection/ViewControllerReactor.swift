@@ -39,7 +39,6 @@ class ViewControllerReactor: Reactor {
         var columnLayout: Int
         var menUsers: [User]
         var womenUsers: [User]
-        
     }
     
     enum Gender {
@@ -116,15 +115,14 @@ class ViewControllerReactor: Reactor {
             newState.menUsers = users
         case let .setWomenUsers(users):
             newState.womenUsers = users
-        case .setError(let error):
-            print("Error: \(error)")
         case let .deleteUser( indexPath):
-            let gender = currentState.selectedGender
-            if gender == .male {
+            if newState.selectedGender == .male {
                 newState.menUsers.remove(at: indexPath.row)
             } else {
                 newState.womenUsers.remove(at: indexPath.row)
             }
+        case .setError(let error):
+            print("Error: \(error)")
         }
         return newState
     }

@@ -35,29 +35,32 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
         setupLongGesture()
         genderSegmentedControl.isUserInteractionEnabled = false
         scrollView.delegate = self
-        configureCollectionView(collectionView: menCollectionView, refreshControl: menRefreshControl)
-        configureCollectionView(collectionView: womenCollectionView, refreshControl: womenRefreshControl)
+        setCollectionView()
         if let reactor = self.reactor {
             bind(reactor: reactor)
             reactor.action.onNext(.selectGender(.male)) // 초기 API 호출
         }
     }
     //MARK: - CollectionView 설정
-    private func configureCollectionView(collectionView: UICollectionView, refreshControl: UIRefreshControl) {
-        let isMenCollectionView = collectionView == self.menCollectionView
-        let columns = isMenCollectionView ? 1 : 2
-        let gender = isMenCollectionView ? Reactor.Gender.male : .female
-        
+    private func setCollectionView() {
+        configureCollectionView(collectionView: menCollectionView, refreshControl: menRefreshControl, gender: .male, columns: 1)
+        configureCollectionView(collectionView: womenCollectionView, refreshControl: womenRefreshControl, gender: .female, columns: 1)
+    }
+    
+    private func configureCollectionView(collectionView: UICollectionView, refreshControl: UIRefreshControl, gender: Reactor.Gender, columns: Int) {
         collectionView.collectionViewLayout = createLayout(columns: columns)
-        let dataSource = DataSource(collectionView: collectionView) { [weak self] (collectionView, indexPath, user) -> UICollectionViewCell? in
+        let dataSource = createDataSource(for: collectionView)
+        gender == .male ? (menDataSource = dataSource) : (womenDataSource = dataSource)
+        setupRefreshControl(refreshControl, for: collectionView, with: gender)
+    }
+    
+    private func createDataSource(for collectionView: UICollectionView) -> DataSource {
+        return DataSource(collectionView: collectionView) { [weak self] (collectionView, indexPath, user) -> UICollectionViewCell? in
             return self?.configureCell(collectionView: collectionView, indexPath: indexPath)
         }
-        
-        if isMenCollectionView {
-            menDataSource = dataSource
-        } else {
-            womenDataSource = dataSource
-        }
+    }
+    
+    private func setupRefreshControl(_ refreshControl: UIRefreshControl, for collectionView: UICollectionView, with gender: Reactor.Gender) {
         collectionView.refreshControl = refreshControl
         refreshControl.rx.controlEvent(.valueChanged)
             .map { Reactor.Action.refreshData }
@@ -73,7 +76,6 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
             .map { _ in Reactor.Action.moreLoadData }
             .bind(to: reactor!.action)
             .disposed(by: disposeBag)
-        
     }
     
     private func configureCell(collectionView: UICollectionView, indexPath: IndexPath) -> UICollectionViewCell? {
@@ -201,7 +203,7 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
         reactor.state.map { $0.columnLayout }
             .distinctUntilChanged()
             .subscribe(onNext: { [weak self] columnLayout in
-                let title = columnLayout == 2 ? "보기옵션: 2열" : "보기옵션: 1열"
+                let title = "보기옵션: \(columnLayout)열"
                 self?.viewOptionButton.setTitle(title, for: .normal)
                 self?.menCollectionView.collectionViewLayout = self?.createLayout(columns: columnLayout) ?? UICollectionViewLayout()
                 self?.womenCollectionView.collectionViewLayout = self?.createLayout(columns: columnLayout) ?? UICollectionViewLayout()
