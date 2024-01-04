@@ -179,7 +179,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="yV1-Dk-0Nm" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2108" y="-2"/>
+            <point key="canvasLocation" x="1883" y="-2"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="h7a-nF-hVt">
@@ -197,11 +197,11 @@
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="wSG-je-MzM" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="139.69465648854961" y="-2.1126760563380285"/>
+            <point key="canvasLocation" x="292" y="-2"/>
         </scene>
     </scenes>
     <inferredMetricsTieBreakers>
-        <segue reference="Xit-S7-7zR"/>
+        <segue reference="ANp-EE-sQr"/>
     </inferredMetricsTieBreakers>
     <resources>
         <systemColor name="systemBackgroundColor">

@@ -35,6 +35,7 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
         setupLongGesture()
         genderSegmentedControl.isUserInteractionEnabled = false
         scrollView.delegate = self
+       // menCollectionView.delegate = self 
         setCollectionView()
         if let reactor = self.reactor {
             bind(reactor: reactor)
@@ -117,7 +118,7 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
         let itemHightFraction: CGFloat = columns == 1 ? 0.2 : 0.4
         let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(itemWidthFraction), heightDimension: .fractionalHeight(1))
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
-        item.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 5, bottom: 5, trailing: 5)
+       // item.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 5, bottom: 5, trailing: 5)
         
         let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(itemHightFraction))
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
