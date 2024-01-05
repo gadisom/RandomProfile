@@ -9,7 +9,6 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
     typealias DataSource = UICollectionViewDiffableDataSource<Section, User>
     typealias Snapshot = NSDiffableDataSourceSnapshot<Section, User>
     
-    
     @IBOutlet weak var scrollView: UIScrollView!
     @IBOutlet weak var viewOptionButton: UIButton!
     @IBOutlet weak var genderSegmentedControl: UISegmentedControl!
@@ -18,16 +17,17 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
     @IBAction func genderSegmentedControl(_ sender: UISegmentedControl){}
     @IBAction func viewOptionButton(_ sender: Any) {}
     
-    
     private var menDataSource: DataSource!
     private var womenDataSource: DataSource!
     private var isTwoColumnLayout = false
+    private var isInitialLoadCompleted = false // 플래그 변수
     private let menRefreshControl = UIRefreshControl()
     private let womenRefreshControl = UIRefreshControl()
     
     enum Section {
         case main
     }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         self.reactor = ViewControllerReactor()
@@ -39,13 +39,7 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
     private func setCollectionView() {
         configureCollectionView(collectionView: menCollectionView, refreshControl: menRefreshControl, gender: .male, columns: 1)
         configureCollectionView(collectionView: womenCollectionView, refreshControl: womenRefreshControl, gender: .female, columns: 1)
-    }
-    
-    private func configureCollectionView(collectionView: UICollectionView, refreshControl: UIRefreshControl, gender: Reactor.Gender, columns: Int) {
-        collectionView.collectionViewLayout = createLayout(columns: columns)
-        let dataSource = createDataSource(for: collectionView)
-        gender == .male ? (menDataSource = dataSource) : (womenDataSource = dataSource)
-        setupRefreshControl(refreshControl, for: collectionView, with: gender)
+        isInitialLoadCompleted = true // 초기 로드 완료 표시
     }
     
     private func createDataSource(for collectionView: UICollectionView) -> DataSource {
@@ -54,14 +48,13 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
         }
     }
     
-    private func setupRefreshControl(_ refreshControl: UIRefreshControl, for collectionView: UICollectionView, with gender: Reactor.Gender) {
-        collectionView.refreshControl = refreshControl
-        refreshControl.rx.controlEvent(.valueChanged)
-            .map { Reactor.Action.refreshData }
-            .bind(to: reactor!.action)
-            .disposed(by: disposeBag)
+    private func configureCollectionView(collectionView: UICollectionView, refreshControl: UIRefreshControl, gender: Reactor.Gender, columns: Int) {
+        collectionView.collectionViewLayout = createLayout(columns: columns)
+        let dataSource = createDataSource(for: collectionView)
+        gender == .male ? (menDataSource = dataSource) : (womenDataSource = dataSource)
+        setupRefreshControl(refreshControl, for: collectionView, with: gender)
         collectionView.rx.contentOffset
-            .filter { [unowned self] _ in self.reactor?.currentState.selectedGender == gender }
+            .filter { _ in self.isInitialLoadCompleted }
             .map { offset in
                 offset.y + collectionView.frame.size.height > collectionView.contentSize.height
             }
@@ -70,6 +63,15 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
             .map { _ in Reactor.Action.moreLoadData }
             .bind(to: reactor!.action)
             .disposed(by: disposeBag)
+    }
+    
+    private func setupRefreshControl(_ refreshControl: UIRefreshControl, for collectionView: UICollectionView, with gender: Reactor.Gender) {
+        collectionView.refreshControl = refreshControl
+        refreshControl.rx.controlEvent(.valueChanged)
+            .map { Reactor.Action.refreshData }
+            .bind(to: reactor!.action)
+            .disposed(by: disposeBag)
+        
     }
     
     private func configureCell(collectionView: UICollectionView, indexPath: IndexPath) -> UICollectionViewCell? {
@@ -85,13 +87,12 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
             user = reactor?.currentState.womenUsers[indexPath.row]
         } else {
             user = nil
+            print("프로필 호출 Error")
         }
-        
         // user가 nil이 아닐 경우에만 셀을 구성합니다.
         if let user = user {
             cell.configure(with: user, reactor: self.reactor!, columnLayout: columnLayout)
         }
-        
         return cell
     }
     private func applySnapshot(users: [User], to collectionView: UICollectionView, refreshControl: UIRefreshControl) {
@@ -111,8 +112,6 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
         let itemHightFraction: CGFloat = columns == 1 ? 0.2 : 0.4
         let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(itemWidthFraction), heightDimension: .fractionalHeight(1))
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
-       // item.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 5, bottom: 5, trailing: 5)
-        
         let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(itemHightFraction))
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
         let section = NSCollectionLayoutSection(group: group)
