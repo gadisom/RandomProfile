@@ -98,25 +98,6 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
         return UICollectionViewCompositionalLayout(section: section)
     }
     //MARK: - View 제스처 설정
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if segue.identifier == "imageStr",
-           let destinationVC = segue.destination as? ProfileImageViewController,
-           let cell = sender as? UICollectionViewCell {
-            
-            // 확인: menCollectionView의 셀인지, 아니면 womenCollectionView의 셀인지
-            let isMenCell = menCollectionView.indexPath(for: cell) != nil
-            let indexPath = isMenCell ? menCollectionView.indexPath(for: cell) : womenCollectionView.indexPath(for: cell)
-            
-            if let indexPath = indexPath {
-                let selectedImageUrl = isMenCell ?
-                reactor?.currentState.menUsers[indexPath.item].picture.large :
-                reactor?.currentState.womenUsers[indexPath.item].picture.large
-                
-                destinationVC.imageUrl = selectedImageUrl
-            }
-        }
-    }
-    
     private func setupLongGesture(){
         let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(gesture:)))
         menCollectionView.addGestureRecognizer(longPressGesture)
@@ -143,11 +124,7 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
         present(alert, animated: true)
     }
     
-    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        let pageIndex = Int(scrollView.contentOffset.x / scrollView.frame.size.width)
-        genderSegmentedControl.selectedSegmentIndex = pageIndex
-        reactor?.action.onNext(.selectGender(pageIndex == 0 ? .male : .female))
-    }
+  
     
 }
 //MARK: - Bind
@@ -155,7 +132,6 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
 extension ViewController {
     
     func bind(reactor: ViewControllerReactor) {
-        
         genderSegmentedControl.rx.selectedSegmentIndex
             .distinctUntilChanged() // 중복된 값의 변화는 무시
             .bind { [weak self] index in
@@ -195,6 +171,7 @@ extension ViewController {
                 self?.womenCollectionView.collectionViewLayout = self?.createLayout(columns: columnLayout) ?? UICollectionViewLayout()
             }
             .disposed(by: disposeBag)
+               
         menCollectionView.rx.contentOffset
             .filter { _ in self.isInitialLoadCompleted }
             .map { [self] offset in
@@ -224,5 +201,30 @@ extension ViewController {
             .bind(to: reactor.action)
             .disposed(by: disposeBag)
         
+        menCollectionView.rx.itemSelected
+            .subscribe(onNext: { [weak self] indexPath in
+                let selectedUser = self!.reactor?.currentState.menUsers[indexPath.row]
+                self!.navigateToProfileImageView(with: selectedUser?.picture.large)
+            })
+            .disposed(by: disposeBag)
+        womenCollectionView.rx.itemSelected
+            .subscribe(onNext: { [weak self] indexPath in
+                let selectedUser = self!.reactor?.currentState.womenUsers[indexPath.row]
+                self!.navigateToProfileImageView(with: selectedUser?.picture.large)
+            })
+            .disposed(by: disposeBag)
+    }
+    private func navigateToProfileImageView(with imageUrl: String?) {
+        guard let imageUrl = imageUrl else { return }
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        if let profileImageVC = storyboard.instantiateViewController(withIdentifier: "ProfileImageViewController") as? ProfileImageViewController {
+            profileImageVC.imageUrl = imageUrl
+            self.navigationController?.pushViewController(profileImageVC, animated: true)
+        }
+    }
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        let pageIndex = Int(scrollView.contentOffset.x / scrollView.frame.size.width)
+        genderSegmentedControl.selectedSegmentIndex = pageIndex
+        reactor?.action.onNext(.selectGender(pageIndex == 0 ? .male : .female))
     }
 }

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="22505" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="Esf-yG-IPm">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="22155" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="Esf-yG-IPm">
     <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22504"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22131"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="collection view cell content view" minToolsVersion="11.0"/>
@@ -64,9 +64,6 @@
                                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                 </collectionViewCellContentView>
                                                                 <size key="customSize" width="393" height="520"/>
-                                                                <connections>
-                                                                    <segue destination="cuv-Vj-eMt" kind="push" identifier="imageStr" id="ANp-EE-sQr"/>
-                                                                </connections>
                                                             </collectionViewCell>
                                                         </cells>
                                                     </collectionView>
@@ -88,9 +85,6 @@
                                                                     <autoresizingMask key="autoresizingMask"/>
                                                                 </collectionViewCellContentView>
                                                                 <size key="customSize" width="393" height="597"/>
-                                                                <connections>
-                                                                    <segue destination="cuv-Vj-eMt" kind="push" identifier="imageStr" id="Xit-S7-7zR"/>
-                                                                </connections>
                                                             </collectionViewCell>
                                                         </cells>
                                                     </collectionView>
@@ -137,16 +131,16 @@
             </objects>
             <point key="canvasLocation" x="1066.4122137404579" y="-2.1126760563380285"/>
         </scene>
-        <!--ProfileImageDetail-->
+        <!--프로필 -->
         <scene sceneID="IX9-Xh-eYs">
             <objects>
-                <viewController storyboardIdentifier="ProfileImageViewController" id="cuv-Vj-eMt" customClass="ProfileImageViewController" customModule="Selection" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="ProfileImageViewController" title="프로필 " id="cuv-Vj-eMt" customClass="ProfileImageViewController" customModule="Selection" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="y9Y-y3-6gw">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="vos-7f-fIV">
-                                <rect key="frame" x="0.0" y="162.33333333333331" width="393" height="596.33333333333348"/>
+                                <rect key="frame" x="0.0" y="140.33333333333331" width="393" height="596.33333333333348"/>
                                 <subviews>
                                     <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="ham-7l-ZME">
                                         <rect key="frame" x="0.0" y="0.0" width="393" height="596.33333333333337"/>
@@ -177,7 +171,7 @@
                     <navigationItem key="navigationItem" title="ProfileImageDetail" id="fFf-dL-kiG"/>
                     <connections>
                         <outlet property="profileImageView" destination="ham-7l-ZME" id="pmn-z0-15h"/>
-                        <outlet property="scrollView" destination="vos-7f-fIV" id="U6j-nA-3yk"/>
+                        <outlet property="scrollView" destination="vos-7f-fIV" id="3ei-GJ-bJm"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="yV1-Dk-0Nm" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
@@ -203,9 +197,6 @@
             <point key="canvasLocation" x="292" y="-2"/>
         </scene>
     </scenes>
-    <inferredMetricsTieBreakers>
-        <segue reference="ANp-EE-sQr"/>
-    </inferredMetricsTieBreakers>
     <resources>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>

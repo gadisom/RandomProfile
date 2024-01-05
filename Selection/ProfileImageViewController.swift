@@ -19,8 +19,6 @@ class ProfileImageViewController: UIViewController,UIScrollViewDelegate {
         scrollView.delegate = self
         scrollView.minimumZoomScale = 1.0
         scrollView.maximumZoomScale = 6.0
-      
-        
         // URL을 사용하여 이미지 로드
         if let urlString = imageUrl, let url = URL(string: urlString) {
             URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
