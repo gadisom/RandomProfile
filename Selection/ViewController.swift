@@ -9,14 +9,15 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
     typealias DataSource = UICollectionViewDiffableDataSource<Section, User>
     typealias Snapshot = NSDiffableDataSourceSnapshot<Section, User>
     
-    @IBAction func viewOptionButton(_ sender: Any) {
-        reactor?.action.onNext(.toggleLayout)
-    }
+    
     @IBOutlet weak var scrollView: UIScrollView!
     @IBOutlet weak var viewOptionButton: UIButton!
     @IBOutlet weak var genderSegmentedControl: UISegmentedControl!
     @IBOutlet weak var menCollectionView: UICollectionView!
     @IBOutlet weak var womenCollectionView: UICollectionView!
+    @IBAction func genderSegmentedControl(_ sender: UISegmentedControl){}
+    @IBAction func viewOptionButton(_ sender: Any) {}
+    
     
     private var menDataSource: DataSource!
     private var womenDataSource: DataSource!
@@ -24,23 +25,15 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
     private let menRefreshControl = UIRefreshControl()
     private let womenRefreshControl = UIRefreshControl()
     
-    
     enum Section {
         case main
     }
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         self.reactor = ViewControllerReactor()
         setupLongGesture()
-        genderSegmentedControl.isUserInteractionEnabled = false
         scrollView.delegate = self
-       // menCollectionView.delegate = self 
         setCollectionView()
-        if let reactor = self.reactor {
-            bind(reactor: reactor)
-            reactor.action.onNext(.selectGender(.male)) // 초기 API 호출
-        }
     }
     //MARK: - CollectionView 설정
     private func setCollectionView() {
@@ -157,7 +150,6 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
         if gesture.state != .began {
             return
         }
-        
         let point = gesture.location(in: gesture.view == menCollectionView ? menCollectionView : womenCollectionView)
         guard let indexPath = (gesture.view == menCollectionView ? menCollectionView : womenCollectionView).indexPathForItem(at: point),
               let reactor = reactor else {
@@ -179,37 +171,47 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
     }
     //MARK: - Bind
     func bind(reactor: ViewControllerReactor) {
-        // 스크롤 뷰의 페이지 변경에 따른 세그먼트 컨트롤 값 변경
-        scrollView.rx.didEndDecelerating
-            .map { _ in
-                Int(self.scrollView.contentOffset.x / self.scrollView.frame.width)
+        
+        genderSegmentedControl.rx.selectedSegmentIndex
+            .distinctUntilChanged() // 중복된 값의 변화는 무시
+            .bind { [weak self] index in
+                // 스크롤 뷰의 페이지를 해당 인덱스에 맞춰 이동
+                let width = self?.scrollView.frame.width ?? 0
+                let offset = CGPoint(x: width * CGFloat(index), y: 0)
+                self?.scrollView.setContentOffset(offset, animated: true)
+                // Reactor에 해당 성별 선택 액션 전달
+                reactor.action.onNext(index == 0 ? .selectGender(.male) : .selectGender(.female))
             }
-            .bind(to: genderSegmentedControl.rx.selectedSegmentIndex)
             .disposed(by: disposeBag)
+        viewOptionButton.rx.tap
+                .map { Reactor.Action.toggleLayout }
+                .bind(to: reactor.action)
+                .disposed(by: disposeBag)
         
         reactor.state.map { $0.menUsers }
-            .subscribe(onNext: { [weak self] users in
+            .bind { [weak self] users in
                 self?.applySnapshot(users: users, to: self!.menCollectionView, refreshControl: self!.menRefreshControl)
-            })
+            }
             .disposed(by: disposeBag)
-        
+     
         // 여성 사용자 데이터 로드
         reactor.state.map { $0.womenUsers }
-            .subscribe(onNext: { [weak self] users in
+            .bind { [weak self] users in
                 self?.applySnapshot(users: users, to: self!.womenCollectionView, refreshControl: self!.womenRefreshControl)
-            })
+            }
             .disposed(by: disposeBag)
-        
+
         // 컬럼 레이아웃 변경에 따른 UI 업데이트
         reactor.state.map { $0.columnLayout }
             .distinctUntilChanged()
-            .subscribe(onNext: { [weak self] columnLayout in
+            .bind { [weak self] columnLayout in
                 let title = "보기옵션: \(columnLayout)열"
                 self?.viewOptionButton.setTitle(title, for: .normal)
                 self?.menCollectionView.collectionViewLayout = self?.createLayout(columns: columnLayout) ?? UICollectionViewLayout()
                 self?.womenCollectionView.collectionViewLayout = self?.createLayout(columns: columnLayout) ?? UICollectionViewLayout()
-            })
+            }
             .disposed(by: disposeBag)
+
         
     }
 }
