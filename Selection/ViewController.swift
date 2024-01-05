@@ -52,28 +52,8 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
         collectionView.collectionViewLayout = createLayout(columns: columns)
         let dataSource = createDataSource(for: collectionView)
         gender == .male ? (menDataSource = dataSource) : (womenDataSource = dataSource)
-        setupRefreshControl(refreshControl, for: collectionView, with: gender)
-        collectionView.rx.contentOffset
-            .filter { _ in self.isInitialLoadCompleted }
-            .map { offset in
-                offset.y + collectionView.frame.size.height > collectionView.contentSize.height
-            }
-            .distinctUntilChanged()
-            .filter { $0 }
-            .map { _ in Reactor.Action.moreLoadData }
-            .bind(to: reactor!.action)
-            .disposed(by: disposeBag)
-    }
-    
-    private func setupRefreshControl(_ refreshControl: UIRefreshControl, for collectionView: UICollectionView, with gender: Reactor.Gender) {
         collectionView.refreshControl = refreshControl
-        refreshControl.rx.controlEvent(.valueChanged)
-            .map { Reactor.Action.refreshData }
-            .bind(to: reactor!.action)
-            .disposed(by: disposeBag)
-        
     }
-    
     private func configureCell(collectionView: UICollectionView, indexPath: IndexPath) -> UICollectionViewCell? {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ProfileCell", for: indexPath) as? ProfileCell else {
             fatalError("Unable to dequeue ProfileCell")
@@ -168,7 +148,12 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
         genderSegmentedControl.selectedSegmentIndex = pageIndex
         reactor?.action.onNext(.selectGender(pageIndex == 0 ? .male : .female))
     }
-    //MARK: - Bind
+    
+}
+//MARK: - Bind
+
+extension ViewController {
+    
     func bind(reactor: ViewControllerReactor) {
         
         genderSegmentedControl.rx.selectedSegmentIndex
@@ -210,8 +195,34 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
                 self?.womenCollectionView.collectionViewLayout = self?.createLayout(columns: columnLayout) ?? UICollectionViewLayout()
             }
             .disposed(by: disposeBag)
-
+        menCollectionView.rx.contentOffset
+            .filter { _ in self.isInitialLoadCompleted }
+            .map { [self] offset in
+                offset.y + menCollectionView.frame.size.height > self.menCollectionView.contentSize.height
+            }
+            .distinctUntilChanged()
+            .filter { $0 }
+            .map { _ in Reactor.Action.moreLoadData }
+            .bind(to: reactor.action)
+            .disposed(by: disposeBag)
+        womenCollectionView.rx.contentOffset
+            .filter { _ in self.isInitialLoadCompleted }
+            .map { [self] offset in
+                offset.y + womenCollectionView.frame.size.height > self.womenCollectionView.contentSize.height
+            }
+            .distinctUntilChanged()
+            .filter { $0 }
+            .map { _ in Reactor.Action.moreLoadData }
+            .bind(to: reactor.action)
+            .disposed(by: disposeBag)
+        menRefreshControl.rx.controlEvent(.valueChanged)
+            .map { Reactor.Action.refreshData }
+            .bind(to: reactor.action)
+            .disposed(by: disposeBag)
+        womenRefreshControl.rx.controlEvent(.valueChanged)
+            .map { Reactor.Action.refreshData }
+            .bind(to: reactor.action)
+            .disposed(by: disposeBag)
         
     }
 }
-
