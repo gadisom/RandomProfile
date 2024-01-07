@@ -44,6 +44,14 @@ class ViewControllerReactor: Reactor {
     enum Gender {
         case male
         case female
+        func toggle() -> Gender {
+            switch self {
+            case .male:
+                return .female
+            case .female:
+                return .male
+            }
+        }
     }
     private func loadData(for gender: Gender, isMoreData: Bool = false) -> Observable<Mutation> {
         let service: RandomUserService = (gender == .male) ? .getMenUsers : .getWomenUsers

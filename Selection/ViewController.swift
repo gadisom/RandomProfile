@@ -31,7 +31,6 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
     override func viewDidLoad() {
         super.viewDidLoad()
         self.reactor = ViewControllerReactor()
-        setupLongGesture()
         scrollView.delegate = self
         setCollectionView()
     }
@@ -75,18 +74,6 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
         }
         return cell
     }
-    private func applySnapshot(users: [User], to collectionView: UICollectionView, refreshControl: UIRefreshControl) {
-        var snapshot = Snapshot()
-        snapshot.appendSections([.main])
-        snapshot.appendItems(users, toSection: .main)
-        if collectionView == menCollectionView {
-            menDataSource?.apply(snapshot, animatingDifferences: true)
-        } else if collectionView == womenCollectionView {
-            womenDataSource?.apply(snapshot, animatingDifferences: true)
-        }
-        refreshControl.endRefreshing()
-    }
-    
     private func createLayout(columns: Int) -> UICollectionViewLayout {
         let itemWidthFraction: CGFloat = columns == 1 ? 1 : 0.5
         let itemHightFraction: CGFloat = columns == 1 ? 0.2 : 0.4
@@ -97,34 +84,7 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
         let section = NSCollectionLayoutSection(group: group)
         return UICollectionViewCompositionalLayout(section: section)
     }
-    //MARK: - View 제스처 설정
-    private func setupLongGesture(){
-        let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(gesture:)))
-        menCollectionView.addGestureRecognizer(longPressGesture)
-        
-        let longPressGesture2 = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(gesture:)))
-        womenCollectionView.addGestureRecognizer(longPressGesture2)
-    }
     
-    @objc func handleLongPress(gesture: UILongPressGestureRecognizer) {
-        if gesture.state != .began {
-            return
-        }
-        let point = gesture.location(in: gesture.view == menCollectionView ? menCollectionView : womenCollectionView)
-        guard let indexPath = (gesture.view == menCollectionView ? menCollectionView : womenCollectionView).indexPathForItem(at: point),
-              let reactor = reactor else {
-            return
-        }
-        
-        let alert = UIAlertController(title: nil, message: "삭제하시겠습니까?", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "확인", style: .default, handler: { _ in
-            reactor.action.onNext(.deleteUser(indexPath))
-        }))
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel, handler: nil))
-        present(alert, animated: true)
-    }
-    
-  
     
 }
 //MARK: - Bind
@@ -132,35 +92,32 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
 extension ViewController {
     
     func bind(reactor: ViewControllerReactor) {
+        
         genderSegmentedControl.rx.selectedSegmentIndex
-            .distinctUntilChanged() // 중복된 값의 변화는 무시
-            .bind { [weak self] index in
-                // 스크롤 뷰의 페이지를 해당 인덱스에 맞춰 이동
-                let width = self?.scrollView.frame.width ?? 0
-                let offset = CGPoint(x: width * CGFloat(index), y: 0)
-                self?.scrollView.setContentOffset(offset, animated: true)
-                // Reactor에 해당 성별 선택 액션 전달
+            .distinctUntilChanged()
+            .bind { index in
+                self.moveToPage(index)
                 reactor.action.onNext(index == 0 ? .selectGender(.male) : .selectGender(.female))
             }
             .disposed(by: disposeBag)
         viewOptionButton.rx.tap
-                .map { Reactor.Action.toggleLayout }
-                .bind(to: reactor.action)
-                .disposed(by: disposeBag)
+            .map { Reactor.Action.toggleLayout }
+            .bind(to: reactor.action)
+            .disposed(by: disposeBag)
         
         reactor.state.map { $0.menUsers }
             .bind { [weak self] users in
                 self?.applySnapshot(users: users, to: self!.menCollectionView, refreshControl: self!.menRefreshControl)
             }
             .disposed(by: disposeBag)
-     
+        
         // 여성 사용자 데이터 로드
         reactor.state.map { $0.womenUsers }
             .bind { [weak self] users in
                 self?.applySnapshot(users: users, to: self!.womenCollectionView, refreshControl: self!.womenRefreshControl)
             }
             .disposed(by: disposeBag)
-
+        
         // 컬럼 레이아웃 변경에 따른 UI 업데이트
         reactor.state.map { $0.columnLayout }
             .distinctUntilChanged()
@@ -171,7 +128,7 @@ extension ViewController {
                 self?.womenCollectionView.collectionViewLayout = self?.createLayout(columns: columnLayout) ?? UICollectionViewLayout()
             }
             .disposed(by: disposeBag)
-               
+        
         menCollectionView.rx.contentOffset
             .filter { _ in self.isInitialLoadCompleted }
             .map { [self] offset in
@@ -203,16 +160,59 @@ extension ViewController {
         
         menCollectionView.rx.itemSelected
             .subscribe(onNext: { [weak self] indexPath in
-                let selectedUser = self!.reactor?.currentState.menUsers[indexPath.row]
-                self!.navigateToProfileImageView(with: selectedUser?.picture.large)
+                guard let vc = self, let selectedUser = vc.reactor?.currentState.menUsers[indexPath.row] else { return }
+                vc.navigateToProfileImageView(with: selectedUser.picture.large)
             })
             .disposed(by: disposeBag)
+
         womenCollectionView.rx.itemSelected
             .subscribe(onNext: { [weak self] indexPath in
-                let selectedUser = self!.reactor?.currentState.womenUsers[indexPath.row]
-                self!.navigateToProfileImageView(with: selectedUser?.picture.large)
+                guard let vc = self, let selectedUser = vc.reactor?.currentState.womenUsers[indexPath.row] else { return }
+                vc.navigateToProfileImageView(with: selectedUser.picture.large)
             })
             .disposed(by: disposeBag)
+
+        let menLongPressGesture = UILongPressGestureRecognizer()
+        menCollectionView.addGestureRecognizer(menLongPressGesture)
+        let womenLongPressGesture = UILongPressGestureRecognizer()
+        womenCollectionView.addGestureRecognizer(womenLongPressGesture)
+        menLongPressGesture.rx.event
+            .filter { $0.state == .began }
+            .map { [weak self] gesture -> IndexPath? in
+                let point = gesture.location(in: self?.menCollectionView)
+                return self?.menCollectionView.indexPathForItem(at: point)
+            }
+            .compactMap { $0 }
+            .subscribe(onNext: { [weak self] indexPath in
+                self?.showDeletionAlert(for: indexPath, in: self?.menCollectionView, reactor: reactor)
+            })
+            .disposed(by: disposeBag)
+        
+        womenLongPressGesture.rx.event
+            .filter { $0.state == .began }
+            .map { [weak self] gesture -> IndexPath? in
+                let point = gesture.location(in: self?.womenCollectionView)
+                return self?.womenCollectionView.indexPathForItem(at: point)
+            }
+            .compactMap { $0 }
+            .subscribe(onNext: { [weak self] indexPath in
+                self?.showDeletionAlert(for: indexPath, in: self?.womenCollectionView, reactor: reactor)
+            })
+            .disposed(by: disposeBag)
+        
+    }
+    
+    //MARK: - 동작관련
+    private func applySnapshot(users: [User], to collectionView: UICollectionView, refreshControl: UIRefreshControl) {
+        var snapshot = Snapshot()
+        snapshot.appendSections([.main])
+        snapshot.appendItems(users, toSection: .main)
+        if collectionView == menCollectionView {
+            menDataSource?.apply(snapshot, animatingDifferences: true)
+        } else if collectionView == womenCollectionView {
+            womenDataSource?.apply(snapshot, animatingDifferences: true)
+        }
+        refreshControl.endRefreshing()
     }
     private func navigateToProfileImageView(with imageUrl: String?) {
         guard let imageUrl = imageUrl else { return }
@@ -226,5 +226,19 @@ extension ViewController {
         let pageIndex = Int(scrollView.contentOffset.x / scrollView.frame.size.width)
         genderSegmentedControl.selectedSegmentIndex = pageIndex
         reactor?.action.onNext(.selectGender(pageIndex == 0 ? .male : .female))
+    }
+    func moveToPage (_ index: Int)
+    {
+        let width = scrollView.frame.width
+        let offset = CGPoint(x: width * CGFloat(index), y: 0)
+        scrollView.setContentOffset(offset, animated: true)
+    }
+    private func showDeletionAlert(for indexPath: IndexPath, in collectionView: UICollectionView?, reactor: ViewControllerReactor) {
+        let alert = UIAlertController(title: nil, message: "삭제하시겠습니까?", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "확인", style: .default, handler: { _ in
+            reactor.action.onNext(.deleteUser(indexPath))
+        }))
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel, handler: nil))
+        present(alert, animated: true)
     }
 }
