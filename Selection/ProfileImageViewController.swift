@@ -12,13 +12,12 @@ import UIKit
 class ProfileImageViewController: UIViewController,UIScrollViewDelegate {
     @IBOutlet weak var profileImageView: UIImageView!
     var imageUrl: String?
-
+    
     @IBOutlet weak var scrollView: UIScrollView!
     override func viewDidLoad() {
         super.viewDidLoad()
         scrollView.delegate = self
-        scrollView.minimumZoomScale = 1.0
-        scrollView.maximumZoomScale = 6.0
+        scrollView.maximumZoomScale = 2
         // URL을 사용하여 이미지 로드
         if let urlString = imageUrl, let url = URL(string: urlString) {
             URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
@@ -33,18 +32,17 @@ class ProfileImageViewController: UIViewController,UIScrollViewDelegate {
         }
         
     }
-    // ScrollView Delegate Method
-        func viewForZooming(in scrollView: UIScrollView) -> UIView? {
-            return profileImageView
-        } 
+    func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+        return profileImageView
+    }
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
-            if scrollView.zoomScale <= 1.0 {
-                scrollView.zoomScale = 1.0
-            }
-            
-            if scrollView.zoomScale >= 2.0 {
-                scrollView.zoomScale = 2.0
-            }
+        if scrollView.zoomScale <= 1.0 {
+            scrollView.zoomScale = 1.0
         }
+        
+        if scrollView.zoomScale >= 2.0 {
+            scrollView.zoomScale = 2.0
+        }
+    }
 }
 

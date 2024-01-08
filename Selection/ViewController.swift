@@ -92,7 +92,6 @@ class ViewController: UIViewController, StoryboardView, UIScrollViewDelegate, UI
 extension ViewController {
     
     func bind(reactor: ViewControllerReactor) {
-        
         genderSegmentedControl.rx.selectedSegmentIndex
             .distinctUntilChanged()
             .bind { index in
@@ -122,87 +121,57 @@ extension ViewController {
         reactor.state.map { $0.columnLayout }
             .distinctUntilChanged()
             .bind { [weak self] columnLayout in
-                let title = "보기옵션: \(columnLayout)열"
-                self?.viewOptionButton.setTitle(title, for: .normal)
+                self?.viewOptionButton.setTitle("보기옵션 : \(columnLayout)열", for: .normal)
                 self?.menCollectionView.collectionViewLayout = self?.createLayout(columns: columnLayout) ?? UICollectionViewLayout()
                 self?.womenCollectionView.collectionViewLayout = self?.createLayout(columns: columnLayout) ?? UICollectionViewLayout()
             }
             .disposed(by: disposeBag)
-        
-        menCollectionView.rx.contentOffset
-            .filter { _ in self.isInitialLoadCompleted }
-            .map { [self] offset in
-                offset.y + menCollectionView.frame.size.height > self.menCollectionView.contentSize.height
-            }
-            .distinctUntilChanged()
-            .filter { $0 }
-            .map { _ in Reactor.Action.moreLoadData }
-            .bind(to: reactor.action)
-            .disposed(by: disposeBag)
-        womenCollectionView.rx.contentOffset
-            .filter { _ in self.isInitialLoadCompleted }
-            .map { [self] offset in
-                offset.y + womenCollectionView.frame.size.height > self.womenCollectionView.contentSize.height
-            }
-            .distinctUntilChanged()
-            .filter { $0 }
-            .map { _ in Reactor.Action.moreLoadData }
-            .bind(to: reactor.action)
-            .disposed(by: disposeBag)
-        menRefreshControl.rx.controlEvent(.valueChanged)
-            .map { Reactor.Action.refreshData }
-            .bind(to: reactor.action)
-            .disposed(by: disposeBag)
-        womenRefreshControl.rx.controlEvent(.valueChanged)
-            .map { Reactor.Action.refreshData }
-            .bind(to: reactor.action)
-            .disposed(by: disposeBag)
-        
-        menCollectionView.rx.itemSelected
-            .subscribe(onNext: { [weak self] indexPath in
-                guard let vc = self, let selectedUser = vc.reactor?.currentState.menUsers[indexPath.row] else { return }
-                vc.navigateToProfileImageView(with: selectedUser.picture.large)
-            })
-            .disposed(by: disposeBag)
-
-        womenCollectionView.rx.itemSelected
-            .subscribe(onNext: { [weak self] indexPath in
-                guard let vc = self, let selectedUser = vc.reactor?.currentState.womenUsers[indexPath.row] else { return }
-                vc.navigateToProfileImageView(with: selectedUser.picture.large)
-            })
-            .disposed(by: disposeBag)
-
-        let menLongPressGesture = UILongPressGestureRecognizer()
-        menCollectionView.addGestureRecognizer(menLongPressGesture)
-        let womenLongPressGesture = UILongPressGestureRecognizer()
-        womenCollectionView.addGestureRecognizer(womenLongPressGesture)
-        menLongPressGesture.rx.event
-            .filter { $0.state == .began }
-            .map { [weak self] gesture -> IndexPath? in
-                let point = gesture.location(in: self?.menCollectionView)
-                return self?.menCollectionView.indexPathForItem(at: point)
-            }
-            .compactMap { $0 }
-            .subscribe(onNext: { [weak self] indexPath in
-                self?.showDeletionAlert(for: indexPath, in: self?.menCollectionView, reactor: reactor)
-            })
-            .disposed(by: disposeBag)
-        
-        womenLongPressGesture.rx.event
-            .filter { $0.state == .began }
-            .map { [weak self] gesture -> IndexPath? in
-                let point = gesture.location(in: self?.womenCollectionView)
-                return self?.womenCollectionView.indexPathForItem(at: point)
-            }
-            .compactMap { $0 }
-            .subscribe(onNext: { [weak self] indexPath in
-                self?.showDeletionAlert(for: indexPath, in: self?.womenCollectionView, reactor: reactor)
-            })
-            .disposed(by: disposeBag)
+        bindCollectionView(menCollectionView, with: reactor, isMen: true)
+        bindCollectionView(womenCollectionView, with: reactor, isMen: false)
         
     }
+    //MARK: - Bind CollectionView
+
+    func bindCollectionView (_ collectionView : UICollectionView,with reactor : ViewControllerReactor, isMen : Bool) {
+        
+        collectionView.rx.itemSelected
+            .subscribe(onNext: { [weak self] indexPath in
+                guard let vc = self else { return }
+                let selectedUser = isMen ? vc.reactor?.currentState.menUsers[indexPath.row] : vc.reactor?.currentState.womenUsers[indexPath.row]
+                vc.navigateToProfileImageView(with: selectedUser?.picture.large)
+            })
+            .disposed(by: disposeBag)
+        collectionView.rx.contentOffset
+            .filter { _ in self.isInitialLoadCompleted }
+            .map { [self] offset in
+                isMen ? offset.y + menCollectionView.frame.size.height > self.menCollectionView.contentSize.height : offset.y + womenCollectionView.frame.size.height > self.womenCollectionView.contentSize.height
+            }
+            .distinctUntilChanged()
+            .filter { $0 }
+            .map { _ in Reactor.Action.moreLoadData }
+            .bind(to: reactor.action)
+            .disposed(by: disposeBag)
+        let refreshControl = isMen ? menRefreshControl : womenRefreshControl
+        refreshControl.rx.controlEvent(.valueChanged)
+            .map { Reactor.Action.refreshData }
+            .bind(to: reactor.action)
+            .disposed(by: disposeBag)
+        let longPressGesture = UILongPressGestureRecognizer()
+        collectionView.addGestureRecognizer(longPressGesture)
+        longPressGesture.rx.event
+            .filter { $0.state == .began }
+            .map { gesture -> IndexPath? in
+                let point = gesture.location(in: collectionView)
+                return collectionView.indexPathForItem(at: point)
+            }
+            .compactMap { $0 }
+            .subscribe(onNext: { [weak self] indexPath in
+                self?.showDeletionAlert(for: indexPath, in: collectionView, reactor: reactor)
+            })
+            .disposed(by: disposeBag)
+    }
     
-    //MARK: - 동작관련
+    //MARK: - 실행함수
     private func applySnapshot(users: [User], to collectionView: UICollectionView, refreshControl: UIRefreshControl) {
         var snapshot = Snapshot()
         snapshot.appendSections([.main])
@@ -241,4 +210,6 @@ extension ViewController {
         alert.addAction(UIAlertAction(title: "취소", style: .cancel, handler: nil))
         present(alert, animated: true)
     }
+    
 }
+
